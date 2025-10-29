@@ -2,6 +2,7 @@
 <html lang="en">
 <head>
   <meta charset="utf-8" />
+  <base href="./">
   <meta name="viewport" content="width=device-width,initial-scale=1" />
   <title>ADDY — Super Free AI Hub (Optimized Premium)</title>
   <meta name="description" content="ADDY — Image Editor, Voice Reader, OCR, BG Remove, AI Writer, Draw, QR, Chat; PWA-ready single-file. No server keys." />
@@ -9,8 +10,9 @@
   <!-- Open Graph -->
   <meta property="og:title" content="ADDY — Super Free AI Hub (Optimized Premium)" />
   <meta property="og:description" content="Client-side AI tools: Image editor, OCR, BG remove, voice tools, AI writer & more. Ready-to-sell." />
+  <!-- put your preview image at /preview.png in repo or change this URL -->
+  <meta property="og:image" content="https://nobitabroken.github.io/ADDY-buddy/preview.png" />
   <meta property="og:type" content="website" />
-  <meta property="og:image" content="" />
   <!-- JSON-LD -->
   <script type="application/ld+json">
   {
@@ -78,7 +80,7 @@
         <div class="version" id="verBadge">v1.0.0</div>
         <div class="flex-right">
           <button id="themeToggle" class="btn alt">Toggle Theme</button>
-          <button id="installBtn" class="btn">Install App</button>
+          <button id="installBtn" class="btn" style="display:none">Install App</button>
         </div>
       </div>
     </header>
@@ -387,7 +389,6 @@ function showTab(name){
     const el = $(t); if(el) el.style.display = (t===name? 'block':'none');
     document.querySelectorAll('#tabs .tab').forEach(tab=> tab.classList.toggle('active', tab.dataset.tab===name));
   });
-  // small restore focus
   setTimeout(()=> window.scrollTo(0,0),100);
 }
 tabs.forEach(tab=> tab.addEventListener('click', ()=> showTab(tab.dataset.tab)));
@@ -405,7 +406,6 @@ tabs.forEach(tab=> tab.addEventListener('click', ()=> showTab(tab.dataset.tab)))
     else { document.documentElement.setAttribute('data-theme','light'); localStorage.setItem('addy_theme','light'); }
   });
 
-  // PWA: generate manifest on the fly and register simple service worker via blob
   function createManifest(){
     const manifest = {
       name: "ADDY — Super Free AI Hub",
@@ -433,16 +433,18 @@ tabs.forEach(tab=> tab.addEventListener('click', ()=> showTab(tab.dataset.tab)))
       const CACHE = 'addy-shell-v1';
       self.addEventListener('install', e=> {
         self.skipWaiting();
-        e.waitUntil(caches.open(CACHE).then(c=> c.addAll(['./'])));
+        e.waitUntil(caches.open(CACHE).then(c=> c.addAll(['./','./index.html'])));
       });
       self.addEventListener('fetch', e=>{
         if(e.request.method !== 'GET') return;
         e.respondWith(caches.match(e.request).then(r=> r || fetch(e.request)));
       });
     `;
-    const blob = new Blob([swCode], {type:'application/javascript'});
-    const swUrl = URL.createObjectURL(blob);
-    navigator.serviceWorker.register(swUrl).catch(()=>{});
+    try{
+      const blob = new Blob([swCode], {type:'application/javascript'});
+      const swUrl = URL.createObjectURL(blob);
+      navigator.serviceWorker.register(swUrl).catch(()=>{});
+    }catch(err){}
   }
 
   // Install prompt handling
@@ -450,17 +452,19 @@ tabs.forEach(tab=> tab.addEventListener('click', ()=> showTab(tab.dataset.tab)))
   window.addEventListener('beforeinstallprompt', (e)=>{
     e.preventDefault();
     deferredPrompt = e;
-    $('installBtn').style.display = 'inline-block';
+    const ib = $('installBtn'); if(ib) ib.style.display='inline-block';
   });
-  $('installBtn').addEventListener('click', async ()=>{
-    if(deferredPrompt){
-      deferredPrompt.prompt();
-      const choice = await deferredPrompt.userChoice;
-      deferredPrompt = null;
-    } else {
-      alert('Open browser menu → Add to Home screen (if supported).');
-    }
-  });
+  const installBtn = $('installBtn');
+  if(installBtn){
+    installBtn.addEventListener('click', async ()=>{
+      if(deferredPrompt){
+        deferredPrompt.prompt();
+        try{ const choice = await deferredPrompt.userChoice; deferredPrompt = null; }catch(e){}
+      } else {
+        alert('Open browser menu → Add to Home screen (if supported).');
+      }
+    });
+  }
 })();
 
 /* =========================
@@ -471,7 +475,7 @@ let edImg = new Image(), edOriginal = null, edCurrentData = null;
 function fitEditorCanvas(maxW=900){
   const w = Math.min(window.innerWidth-40, maxW);
   if(!edImg.src) return;
-  const ratio = edImg.naturalHeight / edImg.naturalWidth;
+  const ratio = edImg.naturalHeight / edImg.naturalWidth || 1;
   editorCanvas.width = w;
   editorCanvas.height = Math.round(w * ratio);
   drawEditor();
@@ -492,7 +496,7 @@ function drawEditor(){
   ectx.clearRect(0,0,editorCanvas.width,editorCanvas.height);
   const b = $('ed-bright').value, c = $('ed-contrast').value, s = $('ed-sat').value, bl = $('ed-blur').value, hue = $('ed-hue').value;
   const filter = `brightness(${b}%) contrast(${c}%) saturate(${s}%) blur(${bl}px) hue-rotate(${hue}deg)`;
-  ectx.filter = filter;
+  try{ ectx.filter = filter; }catch(e){ ectx.filter = 'none'; }
   ectx.drawImage(edImg, 0,0, editorCanvas.width, editorCanvas.height);
   ectx.filter = 'none';
   const tint = $('ed-tint').value;
@@ -507,28 +511,28 @@ function hexWithAlpha(hex, a=0.2){
   const r = parseInt(h.substring(0,2),16), g=parseInt(h.substring(2,4),16), b=parseInt(h.substring(4,6),16);
   return `rgba(${r},${g},${b},${a})`;
 }
-['ed-bright','ed-contrast','ed-sat','ed-blur','ed-hue'].forEach(id=> $(id).addEventListener('input', drawEditor));
-$('ed-tint').addEventListener('input', drawEditor);
+['ed-bright','ed-contrast','ed-sat','ed-blur','ed-hue'].forEach(id=> { const el=$(id); if(el) el.addEventListener('input', drawEditor); });
+if($('ed-tint')) $('ed-tint').addEventListener('input', drawEditor);
 
-$('fitCanvas').addEventListener('click', ()=> fitEditorCanvas());
-$('resetImg').addEventListener('click', ()=> { if(edOriginal){ edImg.src = edOriginal; fitEditorCanvas(); }});
-$('downloadImg').addEventListener('click', ()=> {
+if($('fitCanvas')) $('fitCanvas').addEventListener('click', ()=> fitEditorCanvas());
+if($('resetImg')) $('resetImg').addEventListener('click', ()=> { if(edOriginal){ edImg.src = edOriginal; fitEditorCanvas(); }});
+if($('downloadImg')) $('downloadImg').addEventListener('click', ()=> {
   if(!edCurrentData && edOriginal) { edImg.src = edOriginal; fitEditorCanvas(); }
   if(!edCurrentData) return alert('Upload image first');
   const a = document.createElement('a'); a.href = edCurrentData; a.download = 'addy_edit.png'; a.click();
 });
 
 /* presets */
-$('preset-natural').addEventListener('click', ()=>{
+if($('preset-natural')) $('preset-natural').addEventListener('click', ()=>{
   $('ed-bright').value=100; $('ed-contrast').value=100; $('ed-sat').value=100; $('ed-blur').value=0; $('ed-hue').value=0; $('ed-tint').value='#ffffff'; drawEditor();
 });
-$('preset-vivid').addEventListener('click', ()=>{
+if($('preset-vivid')) $('preset-vivid').addEventListener('click', ()=>{
   $('ed-bright').value=110; $('ed-contrast').value=120; $('ed-sat').value=140; $('ed-blur').value=0; $('ed-hue').value=0; $('ed-tint').value='#ffffff'; drawEditor();
 });
-$('preset-bw').addEventListener('click', ()=>{ $('ed-sat').value=0; $('ed-contrast').value=110; $('ed-bright').value=95; $('ed-tint').value='#ffffff'; drawEditor();});
+if($('preset-bw')) $('preset-bw').addEventListener('click', ()=>{ $('ed-sat').value=0; $('ed-contrast').value=110; $('ed-bright').value=95; $('ed-tint').value='#ffffff'; drawEditor();});
 
 /* auto-enhance (histogram stretch) */
-$('autoEnhanceBtn').addEventListener('click', ()=>{
+if($('autoEnhanceBtn')) $('autoEnhanceBtn').addEventListener('click', ()=>{
   if(!edImg.src) return alert('Upload an image first');
   const tmp = document.createElement('canvas'); tmp.width = edImg.naturalWidth; tmp.height = edImg.naturalHeight;
   const tctx = tmp.getContext('2d'); tctx.drawImage(edImg,0,0);
@@ -551,7 +555,7 @@ $('autoEnhanceBtn').addEventListener('click', ()=>{
 });
 
 /* crop - center square */
-$('cropBtn').addEventListener('click', ()=>{
+if($('cropBtn')) $('cropBtn').addEventListener('click', ()=>{
   if(!edImg.src) return alert('Upload an image first');
   const tmp = document.createElement('canvas'); const min = Math.min(edImg.naturalWidth, edImg.naturalHeight);
   tmp.width = min; tmp.height = min;
@@ -575,7 +579,7 @@ async function loadBodyPix(){
   bodyPixNet = await bodyPix.load();
   return bodyPixNet;
 }
-$('removeBgBtn').addEventListener('click', async ()=>{
+if($('removeBgBtn')) $('removeBgBtn').addEventListener('click', async ()=>{
   if(!edImg.src) return alert('Upload an image first');
   try{
     $('removeBgBtn').innerText='Loading BG model...'; $('removeBgBtn').disabled=true;
@@ -593,7 +597,7 @@ $('removeBgBtn').addEventListener('click', async ()=>{
     edImg.src=tmp.toDataURL();
     edOriginal=edImg.src;
     fitEditorCanvas();
-  }catch(err){ alert('BG remove error: '+err.message); }
+  }catch(err){ alert('BG remove error: '+(err && err.message?err.message:err)); }
   $('removeBgBtn').innerText='Remove BG'; $('removeBgBtn').disabled=false;
 });
 
@@ -608,7 +612,7 @@ async function loadTesseract(){
   TesseractLib = window.Tesseract;
   return TesseractLib;
 }
-$('ocrBtn').addEventListener('click', async ()=>{
+if($('ocrBtn')) $('ocrBtn').addEventListener('click', async ()=>{
   if(!edImg.src) return alert('Upload an image first');
   $('ocrBtn').innerText='Running OCR...'; $('ocrBtn').disabled=true;
   try{
@@ -630,7 +634,7 @@ $('ocrBtn').addEventListener('click', async ()=>{
       box.value = txt;
       box.scrollIntoView({behavior:'smooth'});
     }
-  }catch(err){ alert('OCR error: '+err.message); }
+  }catch(err){ alert('OCR error: '+(err && err.message?err.message:err)); }
   $('ocrBtn').innerText='Run OCR'; $('ocrBtn').disabled=false;
 });
 
@@ -652,25 +656,25 @@ function simpleSummarize(text, maxSent=3){
   const idx = scores.map((v,i)=>[v,i]).sort((a,b)=>b[0]-a[0]).slice(0,maxSent).sort((a,b)=>a[1]-b[1]);
   return idx.map(x=>sents[x[1]].trim()).join(' ');
 }
-$('summBtn').addEventListener('click', ()=> {
+if($('summBtn')) $('summBtn').addEventListener('click', ()=> {
   const t = $('textInput').value; $('textOutput').value = simpleSummarize(t,3);
 });
-$('paraBtn').addEventListener('click', ()=> {
+if($('paraBtn')) $('paraBtn').addEventListener('click', ()=> {
   const t = $('textInput').value; if(!t) return alert('Paste text first');
   const map = {'important':'crucial','use':'utilize','help':'assist','buy':'purchase','get':'obtain','said':'stated','really':'truly','very':'extremely'};
   const out = t.replace(/\b(\w+)\b/g, (m)=> map[m.toLowerCase()] || m);
   $('textOutput').value = out;
 });
-$('copyText').addEventListener('click', ()=> navigator.clipboard.writeText($('textOutput').value).then(()=>alert('Copied')));
-$('saveText').addEventListener('click', ()=> {
+if($('copyText')) $('copyText').addEventListener('click', ()=> navigator.clipboard.writeText($('textOutput').value).then(()=>alert('Copied')));
+if($('saveText')) $('saveText').addEventListener('click', ()=> {
   const v = $('textOutput').value || $('textInput').value;
   if(!v) return alert('Nothing to save');
   const blob = new Blob([v], {type:'text/plain'});
   const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = 'addy_text.txt'; a.click();
 });
 /* autosave */
-setInterval(()=> { const v=$('textInput').value||''; if(v && v.length>20) localStorage.setItem('addy_text', v); }, 5000);
-window.addEventListener('load', ()=> { const saved=localStorage.getItem('addy_text'); if(saved) $('textInput').value=saved; });
+setInterval(()=> { const el = $('textInput'); if(el){ const v=el.value||''; if(v && v.length>20) localStorage.setItem('addy_text', v); } }, 5000);
+window.addEventListener('load', ()=> { const saved=localStorage.getItem('addy_text'); if(saved && $('textInput')) $('textInput').value=saved; });
 
 /* -------------------------
    Drawing Canvas
@@ -678,7 +682,7 @@ window.addEventListener('load', ()=> { const saved=localStorage.getItem('addy_te
 const drawCanvas = $('drawCanvas'), dctx = drawCanvas.getContext('2d');
 let drawState = { size: 6, color: '#ffffff', drawing:false, paths:[], undone:[] };
 function initDrawCanvas(){
-  const sz = parseInt($('drawSize').value);
+  const sel = $('drawSize'); const sz = sel ? parseInt(sel.value) : 800;
   drawCanvas.width = sz; drawCanvas.height = Math.round(sz * 0.75);
   dctx.fillStyle = '#021018'; dctx.fillRect(0,0,drawCanvas.width,drawCanvas.height);
   drawState.paths = []; drawState.undone = [];
@@ -704,12 +708,12 @@ drawCanvas.addEventListener('pointermove', (e)=> {
   if(!drawState.drawing) return; const rect = drawCanvas.getBoundingClientRect(); continueDraw(e.clientX-rect.left, e.clientY-rect.top);
 });
 window.addEventListener('pointerup', ()=> endDraw());
-$('brushSize').addEventListener('input', ()=> drawState.size = parseInt($('brushSize').value));
-$('brushColor').addEventListener('input', ()=> drawState.color = $('brushColor').value);
-$('drawSize').addEventListener('change', ()=> initDrawCanvas());
-$('clearCanvas').addEventListener('click', ()=> { initDrawCanvas(); });
-$('undoBtn').addEventListener('click', ()=> { if(drawState.paths.length) drawState.undone.push(drawState.paths.pop()); redrawPaths(); });
-$('saveDraw').addEventListener('click', ()=> {
+if($('brushSize')) $('brushSize').addEventListener('input', ()=> drawState.size = parseInt($('brushSize').value));
+if($('brushColor')) $('brushColor').addEventListener('input', ()=> drawState.color = $('brushColor').value);
+if($('drawSize')) $('drawSize').addEventListener('change', ()=> initDrawCanvas());
+if($('clearCanvas')) $('clearCanvas').addEventListener('click', ()=> { initDrawCanvas(); });
+if($('undoBtn')) $('undoBtn').addEventListener('click', ()=> { if(drawState.paths.length) drawState.undone.push(drawState.paths.pop()); redrawPaths(); });
+if($('saveDraw')) $('saveDraw').addEventListener('click', ()=> {
   const a = document.createElement('a'); a.href = drawCanvas.toDataURL('image/png'); a.download = 'addy_draw.png'; a.click();
 });
 
@@ -717,17 +721,15 @@ $('saveDraw').addEventListener('click', ()=> {
    QR (using simple library-free SVG generator fallback)
    ------------------------- */
 function makeQRSimple(text, size=180){
-  // quick fallback: use data-url with a placeholder library isn't included; we will make a QR via Google Chart API fallback
-  // attempt to use canvas + chart.googleapis.com (works offline? depends). We'll try data URL via Google service.
   const url = `https://chart.googleapis.com/chart?cht=qr&chl=${encodeURIComponent(text)}&chs=${size}x${size}&chld=L|1`;
   const img = document.createElement('img'); img.src = url; img.alt='QR'; img.width = size; img.height = size;
   return img;
 }
-$('makeQR').addEventListener('click', ()=>{
+if($('makeQR')) $('makeQR').addEventListener('click', ()=>{
   const v = $('qrText').value.trim(); if(!v) return alert('Type text or URL to encode');
   const wrap = $('qrcode'); wrap.innerHTML=''; wrap.appendChild(makeQRSimple(v));
 });
-$('downloadQR').addEventListener('click', ()=>{
+if($('downloadQR')) $('downloadQR').addEventListener('click', ()=>{
   const wrap = $('qrcode'); const img = wrap.querySelector('img');
   if(img){ const a=document.createElement('a'); a.href = img.src; a.download='addy_qr.png'; a.click(); } else alert('Generate QR first');
 });
@@ -743,8 +745,8 @@ const quotes = [
   "गलतियाँ सीखने का हिस्सा हैं — हार कर मत बैठो।",
   "कभी-कभी धीमी प्रगति भी प्रगति है — रुकना नहीं।"
 ];
-$('getQuote').addEventListener('click', ()=> { const q = quotes[Math.floor(Math.random()*quotes.length)]; $('quoteText').innerText = q; });
-$('copyQuote').addEventListener('click', ()=> { const t = $('quoteText').innerText; if(t) navigator.clipboard.writeText(t).then(()=>alert('Copied quote')); });
+if($('getQuote')) $('getQuote').addEventListener('click', ()=> { const q = quotes[Math.floor(Math.random()*quotes.length)]; $('quoteText').innerText = q; });
+if($('copyQuote')) $('copyQuote').addEventListener('click', ()=> { const t = $('quoteText').innerText; if(t) navigator.clipboard.writeText(t).then(()=>alert('Copied quote')); });
 
 /* -------------------------
    Local Chat (simple rule-based)
@@ -764,7 +766,7 @@ function generateReply(msg){
   if(t.includes('ocr')) return "Use OCR button in Image Editor; auto-enhance first for better results.";
   return "Cool idea — bata aur detail, main ek plan bana ke deta hoon.";
 }
-$('sendChat').addEventListener('click', ()=> {
+if($('sendChat')) $('sendChat').addEventListener('click', ()=> {
   const txt = $('chatInput').value.trim(); if(!txt) return;
   appendMessage('user', txt); $('chatInput').value='';
   appendMessage('bot', '...thinking');
@@ -777,12 +779,12 @@ $('sendChat').addEventListener('click', ()=> {
 /* -------------------------
    AI Writer (client templates)
    ------------------------- */
-$('aiGen').addEventListener('click', ()=>{
+if($('aiGen')) $('aiGen').addEventListener('click', ()=>{
   const tpl = $('aiTemplate').value, prompt = $('aiPrompt').value.trim();
   const out = generateAI(tpl, prompt);
   $('aiOutput').value = out;
 });
-$('aiCopy').addEventListener('click', ()=> navigator.clipboard.writeText($('aiOutput').value).then(()=>alert('Copied')));
+if($('aiCopy')) $('aiCopy').addEventListener('click', ()=> navigator.clipboard.writeText($('aiOutput').value).then(()=>alert('Copied')));
 function generateAI(tpl, prompt){
   if(!prompt) return "Type a topic or keywords first (e.g., 'photo editor app')";
   const p = prompt;
@@ -807,35 +809,37 @@ function generateAI(tpl, prompt){
 /* -------------------------
    Palette Extract
    ------------------------- */
-$('palBtn').addEventListener('click', ()=>{
+if($('palBtn')) $('palBtn').addEventListener('click', ()=>{
   if(!edImg.src) return alert('Upload an image first');
   const ctx = editorCanvas.getContext('2d');
-  const imgData = ctx.getImageData(0,0,editorCanvas.width,editorCanvas.height).data;
-  const colors = {}, step=40;
-  for(let i=0;i<imgData.length;i+=4*step){
-    const r=imgData[i],g=imgData[i+1],b=imgData[i+2];
-    const key = `${Math.round(r/16)}${Math.round(g/16)}${Math.round(b/16)}`;
-    colors[key] = {r,g,b};
-  }
-  const keys = Object.keys(colors).slice(0,12);
-  const wrap = $('paletteWrap'); wrap.innerHTML='';
-  keys.forEach(k=>{
-    const {r,g,b}=colors[k]; const hex='#'+[r,g,b].map(x=>x.toString(16).padStart(2,'0')).join('');
-    const box = document.createElement('div'); box.style.width='60px';box.style.height='60px';box.style.borderRadius='8px';box.style.margin='4px';box.style.background=hex; box.title=hex;
-    box.onclick = ()=> { navigator.clipboard.writeText(hex); alert(`Copied ${hex}`); };
-    wrap.appendChild(box);
-  });
-  alert('Palette generated — tap a color to copy HEX');
+  try{
+    const imgData = ctx.getImageData(0,0,editorCanvas.width,editorCanvas.height).data;
+    const colors = {}, step=40;
+    for(let i=0;i<imgData.length;i+=4*step){
+      const r=imgData[i],g=imgData[i+1],b=imgData[i+2];
+      const key = `${Math.round(r/16)}${Math.round(g/16)}${Math.round(b/16)}`;
+      colors[key] = {r,g,b};
+    }
+    const keys = Object.keys(colors).slice(0,12);
+    const wrap = $('paletteWrap'); wrap.innerHTML='';
+    keys.forEach(k=>{
+      const {r,g,b}=colors[k]; const hex='#'+[r,g,b].map(x=>x.toString(16).padStart(2,'0')).join('');
+      const box = document.createElement('div'); box.style.width='60px';box.style.height='60px';box.style.borderRadius='8px';box.style.margin='4px';box.style.background=hex; box.title=hex;
+      box.onclick = ()=> { navigator.clipboard.writeText(hex); alert(`Copied ${hex}`); };
+      wrap.appendChild(box);
+    });
+    alert('Palette generated — tap a color to copy HEX');
+  }catch(e){ alert('Palette error: draw or fit the image first'); }
 });
 
 /* -------------------------
    Voice Reader & Recorder (lite)
    ------------------------- */
 const synth = window.speechSynthesis; let voices=[];
-function populateVoices(){ voices = synth.getVoices(); const sel = $('voiceSelect'); sel.innerHTML=''; voices.forEach(v=>{ const opt = document.createElement('option'); opt.value=v.name; opt.textContent=`${v.name} (${v.lang})`; sel.appendChild(opt); }); }
+function populateVoices(){ voices = synth.getVoices(); const sel = $('voiceSelect'); if(!sel) return; sel.innerHTML=''; voices.forEach(v=>{ const opt = document.createElement('option'); opt.value=v.name; opt.textContent=`${v.name} (${v.lang})`; sel.appendChild(opt); }); }
 if(synth.onvoiceschanged !== undefined) synth.onvoiceschanged = populateVoices;
-populateVoices();
-$('readBtn').addEventListener('click', ()=>{
+setTimeout(()=>{ try{ populateVoices(); }catch(e){} }, 400);
+if($('readBtn')) $('readBtn').addEventListener('click', ()=>{
   const text = $('voiceText').value || '';
   if(!text) return alert('Type some text first');
   if(synth.speaking){ synth.cancel(); }
@@ -843,74 +847,73 @@ $('readBtn').addEventListener('click', ()=>{
   const sel = $('voiceSelect').value; if(sel){ const v = voices.find(x=>x.name===sel); if(v) ut.voice = v; }
   ut.rate = parseFloat($('rate').value); ut.pitch = parseFloat($('pitch').value); synth.speak(ut);
 });
-$('stopRead').addEventListener('click', ()=> synth.cancel());
+if($('stopRead')) $('stopRead').addEventListener('click', ()=> synth.cancel());
 
 let mediaRecorder, audioChunks=[], audioBlob=null, timer=null;
-$('startRec').addEventListener('click', async ()=>{
+if($('startRec')) $('startRec').addEventListener('click', async ()=>{
   try{
     const stream = await navigator.mediaDevices.getUserMedia({audio:true});
     mediaRecorder = new MediaRecorder(stream);
     audioChunks=[]; mediaRecorder.ondataavailable=e=>audioChunks.push(e.data);
     mediaRecorder.onstop=async ()=>{
       audioBlob = new Blob(audioChunks,{type:'audio/webm'});
-      $('audioPlayer').src = URL.createObjectURL(audioBlob);
-      $('recStatus').innerText='Recorded';
+      if($('audioPlayer')) $('audioPlayer').src = URL.createObjectURL(audioBlob);
+      if($('recStatus')) $('recStatus').innerText='Recorded';
     };
     mediaRecorder.start();
-    $('recStatus').innerText='Recording...'; timer = setTimeout(()=> { if(mediaRecorder && mediaRecorder.state==='recording') mediaRecorder.stop(); }, 30000);
-  }catch(err){ alert('Mic access error: '+err.message); }
+    if($('recStatus')) $('recStatus').innerText='Recording...'; timer = setTimeout(()=> { if(mediaRecorder && mediaRecorder.state==='recording') mediaRecorder.stop(); }, 30000);
+  }catch(err){ alert('Mic access error: '+(err && err.message?err.message:err)); }
 });
-$('stopRec').addEventListener('click', ()=> { if(mediaRecorder && mediaRecorder.state!=='inactive') mediaRecorder.stop(); clearTimeout(timer); });
-$('playRec').addEventListener('click', ()=> { const p=$('audioPlayer'); if(p.src) p.play(); });
-$('downloadRec').addEventListener('click', ()=> { if(!audioBlob) return alert('No recording'); const a=document.createElement('a'); a.href=URL.createObjectURL(audioBlob); a.download='addy_voice.webm'; a.click(); });
+if($('stopRec')) $('stopRec').addEventListener('click', ()=> { if(mediaRecorder && mediaRecorder.state!=='inactive') mediaRecorder.stop(); clearTimeout(timer); });
+if($('playRec')) $('playRec').addEventListener('click', ()=> { const p=$('audioPlayer'); if(p && p.src) p.play(); });
+if($('downloadRec')) $('downloadRec').addEventListener('click', ()=> { if(!audioBlob) return alert('No recording'); const a=document.createElement('a'); a.href = URL.createObjectURL(audioBlob); a.download='addy_voice.webm'; a.click(); });
 
 /* -------------------------
    Quick Actions: Export/Import, Session
    ------------------------- */
-$('clearAllBtn').addEventListener('click', ()=> {
+if($('clearAllBtn')) $('clearAllBtn').addEventListener('click', ()=> {
   edImg = new Image(); edOriginal = null; edCurrentData = null; try{ ectx.clearRect(0,0,editorCanvas.width,editorCanvas.height);}catch(e){}
-  initDrawCanvas(); $('textInput').value=''; $('textOutput').value=''; $('voiceText').value=''; $('ocrBoxWrapper').innerHTML='';
+  initDrawCanvas(); if($('textInput')) $('textInput').value=''; if($('textOutput')) $('textOutput').value=''; if($('voiceText')) $('voiceText').value=''; if($('ocrBoxWrapper')) $('ocrBoxWrapper').innerHTML='';
   alert('Cleared all (client only)');
 });
-$('exportSession').addEventListener('click', ()=> {
-  const sess = { editor: edCurrentData || edOriginal, text: $('textInput').value, notes: $('sessionNotes').value, draw: drawCanvas.toDataURL() };
+if($('exportSession')) $('exportSession').addEventListener('click', ()=> {
+  const sess = { editor: edCurrentData || edOriginal, text: ($('textInput')?$('textInput').value:''), notes: ($('sessionNotes')?$('sessionNotes').value:''), draw: drawCanvas.toDataURL() };
   const blob = new Blob([JSON.stringify(sess,null,2)], {type:'application/json'});
   const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = 'addy_session.json'; a.click();
 });
-$('importSession').addEventListener('click', ()=> $('importFile').click());
-$('importFile').addEventListener('change', (e)=> {
+if($('importSession')) $('importSession').addEventListener('click', ()=> $('importFile').click());
+if($('importFile')) $('importFile').addEventListener('change', (e)=> {
   const f = e.target.files[0]; if(!f) return;
   const reader = new FileReader(); reader.onload = ev=>{
     try{
       const data = JSON.parse(ev.target.result);
       if(data.editor){ edImg = new Image(); edImg.onload = ()=> { edOriginal = data.editor; fitEditorCanvas(); }; edImg.src = data.editor; }
       if(data.draw){ const img = new Image(); img.onload = ()=> { dctx.clearRect(0,0,drawCanvas.width,drawCanvas.height); dctx.drawImage(img,0,0); }; img.src = data.draw; }
-      $('textInput').value = data.text || ''; $('sessionNotes').value = data.notes || '';
+      if($('textInput')) $('textInput').value = data.text || ''; if($('sessionNotes')) $('sessionNotes').value = data.notes || '';
       alert('Session imported');
-    }catch(err){ alert('Import error: '+err.message); }
+    }catch(err){ alert('Import error: '+(err && err.message?err.message:err)); }
   }; reader.readAsText(f);
 });
 
 /* -------------------------
    Buyer Pack & Valuation
    ------------------------- */
-$('downloadPackBtn').addEventListener('click', ()=> {
+if($('downloadPackBtn')) $('downloadPackBtn').addEventListener('click', ()=> {
   const readme = `ADDY Buyer Pack\n\nContents:\n- index.html (single-file)\n- README: deploy & monetization steps\n- LICENSE: MIT\n\nDeploy: upload index.html to GitHub Pages.\n`;
   const zipContent = JSON.stringify({readme},null,2);
   const blob = new Blob([zipContent],{type:'application/json'});
   const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download='ADDY_buyer_pack.json'; a.click();
 });
-$('requestValuation').addEventListener('click', ()=> {
+if($('requestValuation')) $('requestValuation').addEventListener('click', ()=> {
   alert('Short valuation:\nWith current premium additions, suggested asking price: ₹15,000–₹22,000 (provide screenshots & deployment instructions to buyers).');
 });
-$('contactBuyer').addEventListener('click', ()=> {
+if($('contactBuyer')) $('contactBuyer').addEventListener('click', ()=> {
   window.location.href = 'mailto:buyer@example.com?subject=Interested%20in%20ADDY%20Buyer%20Pack';
 });
 
 /* -------------------------
    Export small helper
    ------------------------- */
-// save current page as HTML (download)
 function downloadHTML(name='index.html'){
   const html = '<!doctype html>\\n' + document.documentElement.outerHTML;
   const blob = new Blob([html], {type:'text/html'});
@@ -926,19 +929,12 @@ function escapeHtml(s){ return (s+'').replace(/[&<>"']/g, function(m){return {'&
    Init UI small bits
    ------------------------- */
 window.addEventListener('load', ()=> {
-  setTimeout(()=> { if(speechSynthesis.getVoices().length) populateVoices(); }, 400);
+  setTimeout(()=> { if(speechSynthesis.getVoices().length) try{ populateVoices(); }catch(e){} }, 400);
   initDrawCanvas();
-  // set version from localStorage
   const v = localStorage.getItem('addy_ver') || '1.0.0'; $('verBadge').innerText = 'v'+v;
-  // update check (simple)
   const lastChecked = localStorage.getItem('addy_update_check') || 'never';
-  // set savedFlag
   $('savedFlag').innerText = (localStorage.getItem('addy_auto') ? 'yes':'no');
 });
-
-/* =========================
-   End of Script
-   ========================= */
 </script>
 </body>
 </html>
