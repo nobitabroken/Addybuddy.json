@@ -1,0 +1,622 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Agent Marketplace - AI Agent Builder</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/animejs/3.2.1/anime.min.js"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        body { font-family: 'Inter', sans-serif; }
+        .card-hover { transition: all 0.3s ease; }
+        .card-hover:hover { transform: translateY(-8px); box-shadow: 0 20px 40px rgba(0,0,0,0.1); }
+        .gradient-bg { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); }
+        .filter-active { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); }
+    </style>
+</head>
+<body class="bg-gray-50 text-gray-900">
+    <!-- Download Button -->
+    <div class="download-btn">
+        <button onclick="downloadApp()" class="bg-green-600 text-white p-3 rounded-full shadow-lg hover:bg-green-700 transition-all pulse-glow" title="Download AI Agent Hub App">
+            <i class="fas fa-download text-xl"></i>
+        </button>
+    </div>
+
+    <!-- Navigation -->
+    <nav class="bg-white shadow-lg fixed w-full top-0 z-50">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex justify-between items-center h-16">
+                <div class="flex items-center">
+                    <div class="flex-shrink-0">
+                        <h1 class="text-2xl font-bold text-indigo-600">AI Agent Hub</h1>
+                    </div>
+                </div>
+                <div class="hidden md:block">
+                    <div class="ml-10 flex items-baseline space-x-4">
+                        <a href="index.html" class="px-3 py-2 rounded-md text-sm font-medium text-gray-700 hover:bg-gray-100">Home</a>
+                        <a href="create-agent.html" class="px-3 py-2 rounded-md text-sm font-medium text-gray-700 hover:bg-gray-100">Create Agent</a>
+                        <a href="customize.html" class="px-3 py-2 rounded-md text-sm font-medium text-gray-700 hover:bg-gray-100">Customize</a>
+                        <a href="marketplace.html" class="px-3 py-2 rounded-md text-sm font-medium text-white bg-indigo-600 hover:bg-indigo-700">Marketplace</a>
+                        <a href="dashboard.html" class="px-3 py-2 rounded-md text-sm font-medium text-gray-700 hover:bg-gray-100">Dashboard</a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Hero Section -->
+    <section class="gradient-bg pt-20 pb-16">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16">
+            <div class="text-center text-white">
+                <h1 class="text-5xl font-bold mb-6">Agent Marketplace</h1>
+                <p class="text-xl mb-8 text-gray-200">Discover pre-built AI agents and templates to accelerate your automation</p>
+                <div class="max-w-2xl mx-auto">
+                    <div class="relative">
+                        <input type="text" id="searchInput" placeholder="Search agents, templates, or use cases..." 
+                               class="w-full px-6 py-4 rounded-full text-gray-900 text-lg focus:outline-none focus:ring-4 focus:ring-white focus:ring-opacity-50">
+                        <button class="absolute right-2 top-2 bg-indigo-600 text-white p-3 rounded-full hover:bg-indigo-700 transition-colors">
+                            <i class="fas fa-search"></i>
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Main Content -->
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
+        <div class="flex flex-col lg:flex-row gap-8">
+            <!-- Sidebar Filters -->
+            <div class="lg:w-1/4">
+                <div class="bg-white rounded-2xl shadow-xl p-6 sticky top-24">
+                    <h3 class="text-xl font-bold text-gray-900 mb-6">Filter Agents</h3>
+                    
+                    <!-- Category Filter -->
+                    <div class="mb-6">
+                        <h4 class="font-semibold text-gray-900 mb-3">Category</h4>
+                        <div class="space-y-2">
+                            <label class="flex items-center">
+                                <input type="checkbox" class="category-filter mr-3" value="all" checked>
+                                <span>All Categories</span>
+                            </label>
+                            <label class="flex items-center">
+                                <input type="checkbox" class="category-filter mr-3" value="support">
+                                <span>Customer Support</span>
+                            </label>
+                            <label class="flex items-center">
+                                <input type="checkbox" class="category-filter mr-3" value="sales">
+                                <span>Sales Assistant</span>
+                            </label>
+                            <label class="flex items-center">
+                                <input type="checkbox" class="category-filter mr-3" value="content">
+                                <span>Content Creator</span>
+                            </label>
+                            <label class="flex items-center">
+                                <input type="checkbox" class="category-filter mr-3" value="healthcare">
+                                <span>Healthcare</span>
+                            </label>
+                            <label class="flex items-center">
+                                <input type="checkbox" class="category-filter mr-3" value="education">
+                                <span>Education</span>
+                            </label>
+                            <label class="flex items-center">
+                                <input type="checkbox" class="category-filter mr-3" value="technical">
+                                <span>Technical Support</span>
+                            </label>
+                        </div>
+                    </div>
+
+                    <!-- Price Filter -->
+                    <div class="mb-6">
+                        <h4 class="font-semibold text-gray-900 mb-3">Price</h4>
+                        <div class="space-y-2">
+                            <label class="flex items-center">
+                                <input type="radio" name="price" class="price-filter mr-3" value="all" checked>
+                                <span>All Prices</span>
+                            </label>
+                            <label class="flex items-center">
+                                <input type="radio" name="price" class="price-filter mr-3" value="free">
+                                <span>Free</span>
+                            </label>
+                            <label class="flex items-center">
+                                <input type="radio" name="price" class="price-filter mr-3" value="paid">
+                                <span>Premium</span>
+                            </label>
+                        </div>
+                    </div>
+
+                    <!-- Rating Filter -->
+                    <div class="mb-6">
+                        <h4 class="font-semibold text-gray-900 mb-3">Rating</h4>
+                        <div class="space-y-2">
+                            <label class="flex items-center">
+                                <input type="checkbox" class="rating-filter mr-3" value="5">
+                                <span>5 Stars</span>
+                            </label>
+                            <label class="flex items-center">
+                                <input type="checkbox" class="rating-filter mr-3" value="4">
+                                <span>4+ Stars</span>
+                            </label>
+                            <label class="flex items-center">
+                                <input type="checkbox" class="rating-filter mr-3" value="3">
+                                <span>3+ Stars</span>
+                            </label>
+                        </div>
+                    </div>
+
+                    <button onclick="clearFilters()" class="w-full bg-gray-200 text-gray-700 py-2 rounded-lg hover:bg-gray-300 transition-colors">
+                        Clear Filters
+                    </button>
+                </div>
+            </div>
+
+            <!-- Agent Grid -->
+            <div class="lg:w-3/4">
+                <!-- Sort Options -->
+                <div class="flex justify-between items-center mb-6">
+                    <div>
+                        <span class="text-gray-600">Showing <span id="resultCount">24</span> agents</span>
+                    </div>
+                    <div class="flex items-center space-x-4">
+                        <label class="text-sm text-gray-600">Sort by:</label>
+                        <select id="sortSelect" class="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500">
+                            <option value="popular">Most Popular</option>
+                            <option value="rating">Highest Rated</option>
+                            <option value="newest">Newest</option>
+                            <option value="price">Price</option>
+                        </select>
+                    </div>
+                </div>
+
+                <!-- Agent Cards Grid -->
+                <div id="agentGrid" class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
+                    <!-- Agent cards will be populated by JavaScript -->
+                </div>
+
+                <!-- Load More Button -->
+                <div class="text-center mt-12">
+                    <button id="loadMoreBtn" onclick="loadMoreAgents()" class="bg-indigo-600 text-white px-8 py-3 rounded-lg hover:bg-indigo-700 transition-colors">
+                        Load More Agents
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Agent Detail Modal -->
+    <div id="agentModal" class="fixed inset-0 bg-black bg-opacity-50 hidden items-center justify-center z-50">
+        <div class="bg-white rounded-2xl max-w-4xl mx-4 max-h-screen overflow-y-auto">
+            <div id="modalContent">
+                <!-- Modal content will be populated by JavaScript -->
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Sample marketplace agents data
+        const marketplaceAgents = [
+            {
+                id: 1,
+                name: "E-commerce Support Pro",
+                category: "support",
+                description: "Advanced customer support agent for online stores with order tracking, returns, and product inquiries.",
+                price: "free",
+                rating: 4.8,
+                reviews: 1247,
+                downloads: 15420,
+                author: "AI Solutions Co.",
+                features: ["Order Tracking", "Return Processing", "Product Recommendations", "FAQ Handling"],
+                tags: ["ecommerce", "support", "retail", "customer service"],
+                image: "https://images.unsplash.com/photo-1556742049-0cfed4f6a62d?w=300&h=200&fit=crop"
+            },
+            {
+                id: 2,
+                name: "Sales Closer AI",
+                category: "sales",
+                description: "High-converting sales assistant that qualifies leads, schedules demos, and closes deals automatically.",
+                price: "premium",
+                rating: 4.9,
+                reviews: 892,
+                downloads: 8750,
+                author: "SalesTech Pro",
+                features: ["Lead Qualification", "Demo Scheduling", "Proposal Generation", "CRM Integration"],
+                tags: ["sales", "lead generation", "crm", "automation"],
+                image: "https://images.unsplash.com/photo-1553877522-6494745c1044?w=300&h=200&fit=crop"
+            },
+            {
+                id: 3,
+                name: "Content Creator Bot",
+                category: "content",
+                description: "AI-powered content creation assistant for blogs, social media, and marketing materials.",
+                price: "free",
+                rating: 4.6,
+                reviews: 654,
+                downloads: 12300,
+                author: "ContentFlow AI",
+                features: ["Blog Writing", "Social Media Posts", "Email Campaigns", "SEO Optimization"],
+                tags: ["content", "marketing", "writing", "social media"],
+                image: "https://images.unsplash.com/photo-1551288049-bebda4e38f71?w=300&h=200&fit=crop"
+            },
+            {
+                id: 4,
+                name: "Medical Assistant Plus",
+                category: "healthcare",
+                description: "HIPAA-compliant healthcare assistant for patient scheduling, basic triage, and medical information.",
+                price: "premium",
+                rating: 4.7,
+                reviews: 423,
+                downloads: 5600,
+                author: "HealthTech Solutions",
+                features: ["Appointment Scheduling", "Symptom Assessment", "Medication Reminders", "Insurance Verification"],
+                tags: ["healthcare", "medical", "hipaa", "patient care"],
+                image: "https://images.unsplash.com/photo-1559757148-5c350d0d3c56?w=300&h=200&fit=crop"
+            },
+            {
+                id: 5,
+                name: "EduGuide Tutor",
+                category: "education",
+                description: "Personalized education assistant that adapts to student learning styles and provides customized tutoring.",
+                price: "free",
+                rating: 4.5,
+                reviews: 789,
+                downloads: 9800,
+                author: "EduTech Innovations",
+                features: ["Personalized Learning", "Progress Tracking", "Quiz Generation", "Study Planning"],
+                tags: ["education", "tutoring", "learning", "students"],
+                image: "https://images.unsplash.com/photo-1501504905252-473c47e087f8?w=300&h=200&fit=crop"
+            },
+            {
+                id: 6,
+                name: "TechSupport Genius",
+                category: "technical",
+                description: "Advanced technical support agent with diagnostic capabilities and troubleshooting expertise.",
+                price: "premium",
+                rating: 4.8,
+                reviews: 567,
+                downloads: 7200,
+                author: "SupportMaster Pro",
+                features: ["Diagnostic Tools", "Troubleshooting Guides", "Ticket Management", "Knowledge Base"],
+                tags: ["technical support", "it", "troubleshooting", "helpdesk"],
+                image: "https://images.unsplash.com/photo-1550751827-4bd374c3f58b?w=300&h=200&fit=crop"
+            }
+        ];
+
+        let filteredAgents = [...marketplaceAgents];
+        let displayedAgents = [];
+        let currentPage = 0;
+        const agentsPerPage = 9;
+
+        // Initialize
+        document.addEventListener('DOMContentLoaded', function() {
+            setupEventListeners();
+            renderAgents();
+            updateResultCount();
+        });
+
+        function setupEventListeners() {
+            // Search functionality
+            document.getElementById('searchInput').addEventListener('input', function() {
+                filterAgents();
+            });
+
+            // Filter checkboxes
+            document.querySelectorAll('.category-filter, .rating-filter').forEach(checkbox => {
+                checkbox.addEventListener('change', function() {
+                    if (this.value === 'all' && this.checked) {
+                        document.querySelectorAll('.category-filter').forEach(cb => {
+                            if (cb !== this) cb.checked = false;
+                        });
+                    } else if (this.classList.contains('category-filter') && this.checked) {
+                        document.querySelector('.category-filter[value="all"]').checked = false;
+                    }
+                    filterAgents();
+                });
+            });
+
+            // Price radio buttons
+            document.querySelectorAll('.price-filter').forEach(radio => {
+                radio.addEventListener('change', filterAgents);
+            });
+
+            // Sort select
+            document.getElementById('sortSelect').addEventListener('change', function() {
+                sortAgents(this.value);
+                renderAgents();
+            });
+        }
+
+        function filterAgents() {
+            const searchTerm = document.getElementById('searchInput').value.toLowerCase();
+            const selectedCategories = Array.from(document.querySelectorAll('.category-filter:checked')).map(cb => cb.value);
+            const selectedPrice = document.querySelector('.price-filter:checked').value;
+            const selectedRatings = Array.from(document.querySelectorAll('.rating-filter:checked')).map(cb => parseInt(cb.value));
+
+            filteredAgents = marketplaceAgents.filter(agent => {
+                // Search filter
+                const matchesSearch = !searchTerm || 
+                    agent.name.toLowerCase().includes(searchTerm) ||
+                    agent.description.toLowerCase().includes(searchTerm) ||
+                    agent.tags.some(tag => tag.toLowerCase().includes(searchTerm));
+
+                // Category filter
+                const matchesCategory = selectedCategories.includes('all') || 
+                    selectedCategories.includes(agent.category);
+
+                // Price filter
+                const matchesPrice = selectedPrice === 'all' || agent.price === selectedPrice;
+
+                // Rating filter
+                const matchesRating = selectedRatings.length === 0 ||
+                    selectedRatings.some(rating => agent.rating >= rating);
+
+                return matchesSearch && matchesCategory && matchesPrice && matchesRating;
+            });
+
+            currentPage = 0;
+            renderAgents();
+            updateResultCount();
+        }
+
+        function sortAgents(sortBy) {
+            switch(sortBy) {
+                case 'popular':
+                    filteredAgents.sort((a, b) => b.downloads - a.downloads);
+                    break;
+                case 'rating':
+                    filteredAgents.sort((a, b) => b.rating - a.rating);
+                    break;
+                case 'newest':
+                    filteredAgents.sort((a, b) => b.id - a.id);
+                    break;
+                case 'price':
+                    filteredAgents.sort((a, b) => {
+                        if (a.price === 'free' && b.price === 'premium') return -1;
+                        if (a.price === 'premium' && b.price === 'free') return 1;
+                        return 0;
+                    });
+                    break;
+            }
+        }
+
+        function renderAgents() {
+            const startIndex = currentPage * agentsPerPage;
+            const endIndex = startIndex + agentsPerPage;
+            const agentsToShow = filteredAgents.slice(0, endIndex);
+
+            const grid = document.getElementById('agentGrid');
+            grid.innerHTML = agentsToShow.map(agent => createAgentCard(agent)).join('');
+
+            // Update load more button
+            const loadMoreBtn = document.getElementById('loadMoreBtn');
+            if (endIndex >= filteredAgents.length) {
+                loadMoreBtn.style.display = 'none';
+            } else {
+                loadMoreBtn.style.display = 'block';
+            }
+
+            // Animate cards
+            anime({
+                targets: '.agent-card',
+                translateY: [50, 0],
+                opacity: [0, 1],
+                delay: anime.stagger(100),
+                duration: 600,
+                easing: 'easeOutQuad'
+            });
+        }
+
+        function createAgentCard(agent) {
+            const priceBadge = agent.price === 'free' ? 
+                '<span class="bg-green-100 text-green-800 text-xs px-2 py-1 rounded-full">Free</span>' :
+                '<span class="bg-purple-100 text-purple-800 text-xs px-2 py-1 rounded-full">Premium</span>';
+
+            return `
+                <div class="agent-card bg-white rounded-2xl shadow-lg overflow-hidden card-hover cursor-pointer" onclick="showAgentDetails(${agent.id})">
+                    <div class="relative">
+                        <img src="${agent.image}" alt="${agent.name}" class="w-full h-48 object-cover">
+                        <div class="absolute top-4 left-4">
+                            ${priceBadge}
+                        </div>
+                        <div class="absolute top-4 right-4 bg-white bg-opacity-90 px-2 py-1 rounded-lg text-sm font-semibold">
+                            ⭐ ${agent.rating}
+                        </div>
+                    </div>
+                    <div class="p-6">
+                        <h3 class="text-xl font-bold text-gray-900 mb-2">${agent.name}</h3>
+                        <p class="text-gray-600 text-sm mb-4 line-clamp-2">${agent.description}</p>
+                        
+                        <div class="flex flex-wrap gap-2 mb-4">
+                            ${agent.tags.slice(0, 3).map(tag => 
+                                `<span class="bg-gray-100 text-gray-700 text-xs px-2 py-1 rounded-full">${tag}</span>`
+                            ).join('')}
+                        </div>
+                        
+                        <div class="flex justify-between items-center text-sm text-gray-500">
+                            <span>By ${agent.author}</span>
+                            <span>${agent.downloads.toLocaleString()} downloads</span>
+                        </div>
+                        
+                        <div class="mt-4 flex space-x-2">
+                            <button onclick="event.stopPropagation(); previewAgent(${agent.id})" 
+                                    class="flex-1 bg-gray-100 text-gray-700 py-2 px-4 rounded-lg hover:bg-gray-200 transition-colors">
+                                Preview
+                            </button>
+                            <button onclick="event.stopPropagation(); useTemplate(${agent.id})" 
+                                    class="flex-1 bg-indigo-600 text-white py-2 px-4 rounded-lg hover:bg-indigo-700 transition-colors">
+                                Use Template
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            `;
+        }
+
+        function showAgentDetails(agentId) {
+            const agent = marketplaceAgents.find(a => a.id === agentId);
+            if (!agent) return;
+
+            const modalContent = document.getElementById('modalContent');
+            modalContent.innerHTML = `
+                <div class="relative">
+                    <button onclick="closeAgentModal()" class="absolute top-4 right-4 z-10 bg-white bg-opacity-90 p-2 rounded-full hover:bg-opacity-100 transition-all">
+                        <i class="fas fa-times text-gray-600"></i>
+                    </button>
+                    
+                    <div class="bg-gradient-to-r from-indigo-500 to-purple-600 text-white p-8">
+                        <div class="flex items-center space-x-4 mb-4">
+                            <img src="${agent.image}" alt="${agent.name}" class="w-20 h-20 rounded-lg object-cover">
+                            <div>
+                                <h2 class="text-3xl font-bold mb-2">${agent.name}</h2>
+                                <div class="flex items-center space-x-4">
+                                    <span class="bg-white bg-opacity-20 px-3 py-1 rounded-full text-sm">
+                                        ${agent.price === 'free' ? 'Free' : 'Premium'}
+                                    </span>
+                                    <div class="flex items-center">
+                                        <span class="text-yellow-300 mr-1">⭐</span>
+                                        <span>${agent.rating} (${agent.reviews} reviews)</span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <p class="text-lg text-indigo-100">${agent.description}</p>
+                    </div>
+                    
+                    <div class="p-8">
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
+                            <div>
+                                <h3 class="text-xl font-bold text-gray-900 mb-4">Key Features</h3>
+                                <ul class="space-y-2">
+                                    ${agent.features.map(feature => 
+                                        `<li class="flex items-center"><i class="fas fa-check text-green-500 mr-2"></i>${feature}</li>`
+                                    ).join('')}
+                                </ul>
+                                
+                                <h3 class="text-xl font-bold text-gray-900 mb-4 mt-6">Tags</h3>
+                                <div class="flex flex-wrap gap-2">
+                                    ${agent.tags.map(tag => 
+                                        `<span class="bg-indigo-100 text-indigo-700 text-sm px-3 py-1 rounded-full">${tag}</span>`
+                                    ).join('')}
+                                </div>
+                            </div>
+                            
+                            <div>
+                                <h3 class="text-xl font-bold text-gray-900 mb-4">Agent Statistics</h3>
+                                <div class="space-y-4">
+                                    <div class="flex justify-between">
+                                        <span class="text-gray-600">Downloads</span>
+                                        <span class="font-semibold">${agent.downloads.toLocaleString()}</span>
+                                    </div>
+                                    <div class="flex justify-between">
+                                        <span class="text-gray-600">Rating</span>
+                                        <span class="font-semibold">${agent.rating}/5.0</span>
+                                    </div>
+                                    <div class="flex justify-between">
+                                        <span class="text-gray-600">Reviews</span>
+                                        <span class="font-semibold">${agent.reviews}</span>
+                                    </div>
+                                    <div class="flex justify-between">
+                                        <span class="text-gray-600">Author</span>
+                                        <span class="font-semibold">${agent.author}</span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="mt-8 flex space-x-4">
+                            <button onclick="previewAgent(${agent.id})" 
+                                    class="flex-1 bg-gray-200 text-gray-700 py-3 px-6 rounded-lg hover:bg-gray-300 transition-colors">
+                                <i class="fas fa-eye mr-2"></i>Preview Agent
+                            </button>
+                            <button onclick="useTemplate(${agent.id})" 
+                                    class="flex-1 bg-indigo-600 text-white py-3 px-6 rounded-lg hover:bg-indigo-700 transition-colors">
+                                <i class="fas fa-download mr-2"></i>Use This Template
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            `;
+
+            document.getElementById('agentModal').classList.remove('hidden');
+            document.getElementById('agentModal').classList.add('flex');
+        }
+
+        function closeAgentModal() {
+            document.getElementById('agentModal').classList.add('hidden');
+            document.getElementById('agentModal').classList.remove('flex');
+        }
+
+        function previewAgent(agentId) {
+            const agent = marketplaceAgents.find(a => a.id === agentId);
+            alert(`Preview functionality would show a live demo of ${agent.name}. This feature is coming soon!`);
+        }
+
+        function useTemplate(agentId) {
+            const agent = marketplaceAgents.find(a => a.id === agentId);
+            
+            // Create a new agent based on the template
+            const newAgent = {
+                id: Date.now(),
+                name: `${agent.name} (Copy)`,
+                agentType: agent.category,
+                description: agent.description,
+                status: 'draft',
+                createdAt: new Date().toISOString(),
+                template: true,
+                originalId: agentId
+            };
+
+            const agents = JSON.parse(localStorage.getItem('agents') || '[]');
+            agents.push(newAgent);
+            localStorage.setItem('agents', JSON.stringify(agents));
+
+            alert(`Template "${agent.name}" has been added to your agents! You can now customize it further.`);
+            closeAgentModal();
+        }
+
+        function loadMoreAgents() {
+            currentPage++;
+            renderAgents();
+        }
+
+        function updateResultCount() {
+            document.getElementById('resultCount').textContent = filteredAgents.length;
+        }
+
+        function clearFilters() {
+            document.getElementById('searchInput').value = '';
+            document.querySelector('.category-filter[value="all"]').checked = true;
+            document.querySelectorAll('.category-filter').forEach(cb => {
+                if (cb.value !== 'all') cb.checked = false;
+            });
+            document.querySelector('.price-filter[value="all"]').checked = true;
+            document.querySelectorAll('.rating-filter').forEach(cb => cb.checked = false);
+            
+            filterAgents();
+        }
+
+        // Download app function
+        function downloadApp() {
+            const appData = {
+                name: "AI Agent Hub",
+                version: "1.0.0",
+                description: "World's Top 20 AI Agents in one platform",
+                features: ["20+ Top AI Agents", "Interactive Demo Mode", "Advanced Customization", "Performance Analytics", "Community Features"]
+            };
+
+            const dataStr = JSON.stringify(appData, null, 2);
+            const dataUri = 'data:application/json;charset=utf-8,'+ encodeURIComponent(dataStr);
+            
+            const exportFileDefaultName = `AI_Agent_Hub_v1.0.0.json`;
+            
+            const linkElement = document.createElement('a');
+            linkElement.setAttribute('href', dataUri);
+            linkElement.setAttribute('download', exportFileDefaultName);
+            linkElement.click();
+            
+            alert('🎉 AI Agent Hub app downloaded successfully!\n\nThe app includes:\n• All 20 top AI agents\n• Interactive demo mode\n• Advanced customization tools\n• Performance analytics\n• Community features\n\nInstall and start using the world\'s best AI agents today!');
+        }
+    </script>
+</body>
+</html>
