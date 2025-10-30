@@ -1,985 +1,362 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>AI Agent Hub - Unified AI Platform</title>
-    <script src="https://cdn.tailwindcss.com"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/animejs/3.2.1/anime.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/typed.js/2.0.12/typed.min.js"></script>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    <style>
-        body { font-family: 'Inter', sans-serif; }
-        .gradient-bg { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); }
-        .card-hover { transition: all 0.3s ease; }
-        .card-hover:hover { transform: translateY(-8px); box-shadow: 0 20px 40px rgba(0,0,0,0.15); }
-        .typing-cursor { animation: blink 1s infinite; }
-        @keyframes blink { 0%, 50% { opacity: 1; } 51%, 100% { opacity: 0; } }
-        .floating { animation: float 6s ease-in-out infinite; }
-        @keyframes float { 0%, 100% { transform: translateY(0px); } 50% { transform: translateY(-20px); } }
-        .pulse-glow { animation: pulse-glow 2s ease-in-out infinite alternate; }
-        @keyframes pulse-glow { from { box-shadow: 0 0 20px rgba(102, 126, 234, 0.3); } to { box-shadow: 0 0 30px rgba(102, 126, 234, 0.6); } }
-        .agent-demo { background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%); }
-        .download-btn { position: fixed; top: 100px; right: 20px; z-index: 1000; }
-        .build-btn { position: fixed; top: 160px; right: 20px; z-index: 1000; }
-        .demo-modal { background: rgba(0, 0, 0, 0.9); }
-        .chat-bubble { max-width: 70%; }
-        .chat-bubble.user { margin-left: auto; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); }
-        .chat-bubble.agent { margin-right: auto; background: #f3f4f6; }
-        .unified-agent { background: linear-gradient(135deg, #ff6b6b 0%, #4ecdc4 50%, #45b7d1 100%); }
-        .agent-tile { transition: all 0.3s ease; cursor: pointer; }
-        .agent-tile:hover { transform: scale(1.05); box-shadow: 0 10px 30px rgba(0,0,0,0.2); }
-        .build-modal { background: rgba(0, 0, 0, 0.95); }
-        .apk-download { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); }
-    </style>
+  <meta charset="utf-8"/>
+  <meta name="viewport" content="width=device-width,initial-scale=1"/>
+  <title>AI Agent Hub — Integrated AI Tools</title>
+  <link rel="icon" href="data:,">
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/animejs/3.2.1/anime.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/typed.js/2.0.12/typed.min.js"></script>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <style>
+    body{font-family:Inter,system-ui,-apple-system,Segoe UI,Roboto,Helvetica,Arial;background:#f8fafc}
+    .card{background:#fff;border-radius:12px;padding:16px;box-shadow:0 6px 20px rgba(2,6,23,0.06)}
+    .small{font-size:.85rem}
+    textarea{resize:vertical}
+    .kbd{background:#f3f4f6;border:1px solid #e5e7eb;padding:3px 7px;border-radius:6px}
+    .spinner{border:3px solid #eee;border-top:3px solid #6366f1;border-radius:9999px;width:16px;height:16px;animation:spin 1s linear infinite}
+    @keyframes spin{to{transform:rotate(360deg)}}
+  </style>
 </head>
-<body class="bg-gray-50 text-gray-900">
-    <!-- Download Button -->
-    <div class="download-btn">
-        <button onclick="downloadAPK()" class="apk-download text-white p-3 rounded-full shadow-lg hover:opacity-90 transition-all pulse-glow" title="Download AI Agent Hub APK">
-            <i class="fas fa-download text-xl"></i>
-        </button>
+<body class="text-gray-800">
+  <div class="max-w-6xl mx-auto p-6">
+    <header class="flex justify-between items-start gap-4 mb-6">
+      <div>
+        <h1 class="text-3xl font-bold">AI Agent Hub</h1>
+        <p class="text-sm text-gray-600 mt-1">All-in-one AI tools — connect to n8n webhooks in Settings.</p>
+      </div>
+      <div class="flex items-center gap-3">
+        <button id="openSettings" class="px-4 py-2 bg-indigo-600 text-white rounded">Settings</button>
+        <a href="dashboard.html" class="px-4 py-2 bg-gray-100 rounded text-gray-700">Dashboard</a>
+      </div>
+    </header>
+
+    <div id="status" class="small text-gray-600 mb-4">Status: <span id="statusText">No webhooks configured — open Settings.</span></div>
+
+    <main class="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+
+      <!-- Chat -->
+      <section class="card">
+        <h3 class="font-semibold">Chat (Conversation)</h3>
+        <p class="small text-gray-500">POST { text } → expects { answer }</p>
+        <textarea id="chatText" rows="4" class="w-full border mt-2 p-2 rounded"></textarea>
+        <div class="flex gap-2 mt-2">
+          <button id="sendChat" class="px-4 py-2 bg-indigo-600 text-white rounded">Send</button>
+          <button id="clearChat" class="px-3 py-2 bg-gray-100 rounded">Clear</button>
+          <div id="chatBusy" class="ml-auto hidden"><span class="spinner"></span></div>
+        </div>
+        <div id="chatResult" class="mt-3 bg-gray-50 p-3 rounded h-28 overflow-auto small"></div>
+      </section>
+
+      <!-- Summarizer -->
+      <section class="card">
+        <h3 class="font-semibold">Summarizer</h3>
+        <p class="small text-gray-500">POST { text, mode:'summary' } → expects { summary }</p>
+        <textarea id="sumText" rows="6" class="w-full border mt-2 p-2 rounded"></textarea>
+        <div class="flex gap-2 mt-2">
+          <button id="sendSum" class="px-4 py-2 bg-green-600 text-white rounded">Summarize</button>
+          <button id="clearSum" class="px-3 py-2 bg-gray-100 rounded">Clear</button>
+          <div id="sumBusy" class="ml-auto hidden"><span class="spinner"></span></div>
+        </div>
+        <div id="sumResult" class="mt-3 bg-gray-50 p-3 rounded h-28 overflow-auto small"></div>
+      </section>
+
+      <!-- Translator -->
+      <section class="card">
+        <h3 class="font-semibold">Translator</h3>
+        <p class="small text-gray-500">Uses LibreTranslate (client) or proxy via n8n</p>
+        <textarea id="transText" rows="4" class="w-full border mt-2 p-2 rounded"></textarea>
+        <div class="flex gap-2 mt-2">
+          <select id="fromLang" class="p-2 border rounded small"><option value="auto">Auto</option><option value="en">English</option><option value="hi">Hindi</option></select>
+          <select id="toLang" class="p-2 border rounded small"><option value="hi">Hindi</option><option value="en" selected>English</option></select>
+          <button id="sendTrans" class="px-3 py-2 bg-yellow-600 text-white rounded">Translate</button>
+        </div>
+        <div id="transResult" class="mt-3 bg-gray-50 p-3 rounded h-24 overflow-auto small"></div>
+      </section>
+
+      <!-- Grammar / Rewrite -->
+      <section class="card">
+        <h3 class="font-semibold">Grammar / Rewrite</h3>
+        <p class="small text-gray-500">POST { text, tone } → expects { fixed }</p>
+        <textarea id="fixText" rows="4" class="w-full border mt-2 p-2 rounded"></textarea>
+        <div class="flex gap-2 mt-2">
+          <select id="fixTone" class="p-2 border rounded small"><option value="formal">Formal</option><option value="casual">Casual</option><option value="concise">Concise</option></select>
+          <button id="sendFix" class="px-3 py-2 bg-pink-600 text-white rounded">Fix</button>
+        </div>
+        <div id="fixResult" class="mt-3 bg-gray-50 p-3 rounded h-24 overflow-auto small"></div>
+      </section>
+
+      <!-- Image Gen -->
+      <section class="card">
+        <h3 class="font-semibold">Image Generator</h3>
+        <p class="small text-gray-500">POST { prompt, count } → expects { images: [url,...] } or { image_url }</p>
+        <input id="imgPrompt" class="w-full border p-2 rounded mt-2" placeholder="e.g. cyberpunk city at sunset"/>
+        <div class="flex gap-2 mt-2">
+          <input id="imgCount" type="number" min="1" max="4" value="1" class="w-20 p-2 border rounded small"/>
+          <button id="sendImg" class="px-3 py-2 bg-indigo-700 text-white rounded">Generate</button>
+        </div>
+        <div id="imgResult" class="mt-3 bg-gray-50 p-3 rounded h-40 overflow-auto flex items-center justify-center"></div>
+      </section>
+
+      <!-- Text to Speech -->
+      <section class="card">
+        <h3 class="font-semibold">Text-to-Speech (Browser)</h3>
+        <p class="small text-gray-500">Browser fallback; for quality voices use ElevenLabs via n8n</p>
+        <textarea id="ttsText" rows="3" class="w-full border mt-2 p-2 rounded">Hello from AI Agent Hub</textarea>
+        <div class="flex gap-2 mt-2">
+          <select id="voiceSelect" class="p-2 border rounded small"></select>
+          <button id="playTTS" class="px-3 py-2 bg-green-600 text-white rounded">Play</button>
+          <button id="stopTTS" class="px-3 py-2 bg-gray-100 rounded">Stop</button>
+        </div>
+      </section>
+
+      <!-- Captioner -->
+      <section class="card">
+        <h3 class="font-semibold">Auto Captioner (Upload)</h3>
+        <p class="small text-gray-500">multipart upload → n8n forward to Whisper/AssemblyAI</p>
+        <input id="capFile" type="file" accept="audio/*,video/*" class="mt-2"/>
+        <div class="flex gap-2 mt-2">
+          <button id="sendCap" class="px-3 py-2 bg-purple-600 text-white rounded">Upload & Transcribe</button>
+        </div>
+        <div id="capResult" class="mt-3 bg-gray-50 p-3 rounded h-32 overflow-auto small"></div>
+      </section>
+
+      <!-- Email Writer -->
+      <section class="card">
+        <h3 class="font-semibold">Email Writer & Sender</h3>
+        <p class="small text-gray-500">Generate via chat webhook, send via email webhook (n8n Gmail)</p>
+        <input id="emailTo" class="w-full border p-2 rounded mt-2" placeholder="to@example.com"/>
+        <input id="emailSub" class="w-full border p-2 rounded mt-2" placeholder="Subject"/>
+        <textarea id="emailBody" rows="4" class="w-full border mt-2 p-2 rounded" placeholder="Email body..."></textarea>
+        <div class="flex gap-2 mt-2">
+          <button id="genEmail" class="px-3 py-2 bg-indigo-600 text-white rounded">Generate</button>
+          <button id="sendEmail" class="px-3 py-2 bg-blue-600 text-white rounded">Send</button>
+        </div>
+        <div id="emailResult" class="mt-3 bg-gray-50 p-3 rounded h-24 overflow-auto small"></div>
+      </section>
+
+      <!-- Scheduler simple -->
+      <section class="card">
+        <h3 class="font-semibold">Scheduler (register task)</h3>
+        <p class="small text-gray-500">POST { name, cron } → n8n manages Cron triggers</p>
+        <input id="schedName" class="w-full border p-2 rounded mt-2" placeholder="Task name"/>
+        <input id="schedCron" class="w-full border p-2 rounded mt-2" placeholder="Cron (e.g. */5 * * * *)"/>
+        <div class="flex gap-2 mt-2">
+          <button id="schedReg" class="px-3 py-2 bg-yellow-600 text-white rounded">Register</button>
+        </div>
+        <div id="schedResult" class="mt-3 bg-gray-50 p-3 rounded h-24 overflow-auto small"></div>
+      </section>
+
+    </main>
+
+    <footer class="mt-6 small text-gray-500">⚠️ Do not put any provider API keys in frontend. Store them securely in n8n credentials.</footer>
+  </div>
+
+  <!-- Settings Modal -->
+  <div id="settingsModal" class="fixed inset-0 bg-black bg-opacity-50 hidden items-center justify-center z-50">
+    <div class="bg-white rounded-lg p-5 max-w-2xl w-full mx-4">
+      <div class="flex justify-between items-center mb-3">
+        <h4 class="font-semibold">Settings — Paste your n8n webhook URLs</h4>
+        <button id="closeSettings" class="text-gray-600">&times;</button>
+      </div>
+      <div class="space-y-2 small">
+        <label class="text-xs text-gray-600">Chat webhook (POST { text })</label>
+        <input id="cfgChat" class="w-full border p-2 rounded" placeholder="https://.../webhook/chat"/>
+        <label class="text-xs text-gray-600">Summary webhook (POST { text, mode:'summary' })</label>
+        <input id="cfgSummary" class="w-full border p-2 rounded" placeholder="https://.../webhook/summary"/>
+        <label class="text-xs text-gray-600">Grammar webhook (POST { text, tone })</label>
+        <input id="cfgFix" class="w-full border p-2 rounded" placeholder="https://.../webhook/fix"/>
+        <label class="text-xs text-gray-600">Image webhook (POST { prompt, count })</label>
+        <input id="cfgImage" class="w-full border p-2 rounded" placeholder="https://.../webhook/image"/>
+        <label class="text-xs text-gray-600">Caption webhook (multipart file)</label>
+        <input id="cfgCaption" class="w-full border p-2 rounded" placeholder="https://.../webhook/caption"/>
+        <label class="text-xs text-gray-600">Email webhook (POST { to, subject, body })</label>
+        <input id="cfgEmail" class="w-full border p-2 rounded" placeholder="https://.../webhook/email"/>
+        <label class="text-xs text-gray-600">Scheduler webhook (POST { name, cron })</label>
+        <input id="cfgSched" class="w-full border p-2 rounded" placeholder="https://.../webhook/scheduler"/>
+      </div>
+      <div class="flex justify-between items-center mt-4">
+        <div class="text-xs text-gray-500">Settings saved in browser localStorage for convenience.</div>
+        <div class="flex gap-2">
+          <button id="saveCfg" class="px-4 py-2 bg-indigo-600 text-white rounded">Save</button>
+          <button id="clearCfg" class="px-4 py-2 bg-gray-100 rounded">Clear</button>
+        </div>
+      </div>
     </div>
+  </div>
 
-    <!-- Build Button -->
-    <div class="build-btn">
-        <button onclick="openBuildModal()" class="bg-yellow-500 text-white p-3 rounded-full shadow-lg hover:bg-yellow-600 transition-all pulse-glow" title="Build Custom AI Agent">
-            <i class="fas fa-hammer text-xl"></i>
-        </button>
-    </div>
+<script>
+/* Helper */
+const el = id => document.getElementById(id);
+function showStatus(msg){ el('statusText').innerText = msg; }
 
-    <!-- Navigation -->
-    <nav class="bg-white shadow-lg fixed w-full top-0 z-50">
-        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-            <div class="flex justify-between items-center h-16">
-                <div class="flex items-center">
-                    <div class="flex-shrink-0">
-                        <h1 class="text-2xl font-bold text-indigo-600">AI Agent Hub</h1>
-                    </div>
-                </div>
-                <div class="hidden md:block">
-                    <div class="ml-10 flex items-baseline space-x-4">
-                        <a href="#unified" class="px-3 py-2 rounded-md text-sm font-medium text-gray-700 hover:bg-gray-100">Unified AI</a>
-                        <a href="#agents" class="px-3 py-2 rounded-md text-sm font-medium text-gray-700 hover:bg-gray-100">All Agents</a>
-                        <a href="#demo" class="px-3 py-2 rounded-md text-sm font-medium text-gray-700 hover:bg-gray-100">Demo</a>
-                        <a href="dashboard.html" class="px-3 py-2 rounded-md text-sm font-medium bg-indigo-600 text-white hover:bg-indigo-700">Dashboard</a>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </nav>
+/* Save/load config */
+function loadConfig(){
+  const cfg = JSON.parse(localStorage.getItem('ai_cfg')||'{}');
+  el('cfgChat').value = cfg.chat||'';
+  el('cfgSummary').value = cfg.summary||'';
+  el('cfgFix').value = cfg.fix||'';
+  el('cfgImage').value = cfg.image||'';
+  el('cfgCaption').value = cfg.caption||'';
+  el('cfgEmail').value = cfg.email||'';
+  el('cfgSched').value = cfg.sched||'';
+  const keys = Object.keys(cfg).filter(k=>cfg[k]);
+  showStatus(keys.length? 'Configured: ' + keys.join(', '): 'No webhooks configured — open Settings.');
+  return cfg;
+}
+function saveConfig(){
+  const cfg = {
+    chat: el('cfgChat').value.trim(),
+    summary: el('cfgSummary').value.trim(),
+    fix: el('cfgFix').value.trim(),
+    image: el('cfgImage').value.trim(),
+    caption: el('cfgCaption').value.trim(),
+    email: el('cfgEmail').value.trim(),
+    sched: el('cfgSched').value.trim()
+  };
+  localStorage.setItem('ai_cfg', JSON.stringify(cfg));
+  loadConfig();
+}
 
-    <!-- Hero Section -->
-    <section class="gradient-bg min-h-screen flex items-center pt-16">
-        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-20">
-            <div class="grid grid-cols-1 lg:grid-cols-2 gap-12 items-center">
-                <div class="text-white">
-                    <h1 class="text-5xl lg:text-6xl font-bold mb-6 leading-tight">
-                        Unified <span id="typed-text" class="text-yellow-300"></span>
-                        <span class="typing-cursor">|</span>
-                    </h1>
-                    <p class="text-xl mb-8 text-gray-200 leading-relaxed">
-                        Combine the power of all 20 world-class AI agents into one unified intelligence.
-                        Build custom AI combinations, deploy instantly, and download the complete platform as APK.
-                    </p>
-                    <div class="flex flex-col sm:flex-row gap-4">
-                        <button onclick="showUnifiedDemo()" class="bg-yellow-400 text-gray-900 px-8 py-4 rounded-lg font-semibold hover:bg-yellow-300 transform hover:scale-105 transition-all duration-200 pulse-glow">
-                            <i class="fas fa-rocket mr-2"></i>Try Unified AI
-                        </button>
-                        <button onclick="openBuildModal()" class="border-2 border-white text-white px-8 py-4 rounded-lg font-semibold hover:bg-white hover:text-gray-900 transition-all duration-200">
-                            <i class="fas fa-hammer mr-2"></i>Build Custom AI
-                        </button>
-                    </div>
-                </div>
-                <div class="relative">
-                    <div class="floating">
-                        <div class="bg-white rounded-2xl p-8 shadow-2xl">
-                            <div class="text-center mb-6">
-                                <div class="w-20 h-20 unified-agent rounded-full mx-auto mb-4 flex items-center justify-center">
-                                    <i class="fas fa-brain text-3xl text-white"></i>
-                                </div>
-                                <h3 class="text-2xl font-bold text-gray-900">Unified AI Demo</h3>
-                            </div>
-                            <div class="space-y-4">
-                                <div class="bg-purple-100 p-4 rounded-lg">
-                                    <p class="text-sm text-purple-800">🎨 Creative + 💼 Business: "I'll design a brand strategy with stunning visuals"</p>
-                                </div>
-                                <div class="bg-blue-100 p-4 rounded-lg ml-8">
-                                    <p class="text-sm text-blue-800">💻 Code + 🔬 Research: "I'll build your app with market analysis"</p>
-                                </div>
-                                <div class="bg-green-100 p-4 rounded-lg">
-                                    <p class="text-sm text-green-800">🎯 Marketing + 🎧 Support: "I'll optimize campaigns with customer insights"</p>
-                                </div>
-                                <div class="bg-orange-100 p-4 rounded-lg ml-8">
-                                    <p class="text-sm text-orange-800">All 20 Agents Combined: "I can do everything! 🚀"</p>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </section>
+/* POST helpers */
+async function postJSON(url, body){
+  try{
+    const res = await fetch(url, { method:'POST', headers:{ 'Content-Type':'application/json' }, body: JSON.stringify(body) });
+    if(!res.ok) throw new Error('Status '+res.status);
+    return await res.json();
+  } catch(e){ return { error: e.message || String(e) }; }
+}
+async function postForm(url, form){
+  try{
+    const res = await fetch(url, { method:'POST', body: form });
+    if(!res.ok) throw new Error('Status '+res.status);
+    return await res.json();
+  } catch(e){ return { error: e.message || String(e) }; }
+}
 
-    <!-- Unified AI Builder Section -->
-    <section id="unified" class="py-20 bg-white">
-        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-            <div class="text-center mb-16">
-                <h2 class="text-4xl font-bold text-gray-900 mb-4">Build Your Unified AI</h2>
-                <p class="text-xl text-gray-600">Select multiple AI agents to create your perfect combination</p>
-            </div>
+/* Modal wiring */
+el('openSettings').addEventListener('click', ()=> el('settingsModal').classList.remove('hidden'));
+el('closeSettings').addEventListener('click', ()=> el('settingsModal').classList.add('hidden'));
+el('saveCfg').addEventListener('click', ()=>{ saveConfig(); el('settingsModal').classList.add('hidden'); });
+el('clearCfg').addEventListener('click', ()=>{ localStorage.removeItem('ai_cfg'); loadConfig(); });
 
-            <div class="bg-gray-50 rounded-2xl p-8 mb-12">
-                <h3 class="text-2xl font-bold text-gray-900 mb-6 text-center">Select Agents to Combine</h3>
-                <div class="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-5 gap-4 mb-8" id="agentSelector">
-                    <!-- Agent selection tiles will be populated here -->
-                </div>
-                
-                <div class="text-center">
-                    <div class="mb-4">
-                        <span class="text-lg font-semibold text-gray-700">Selected Agents: </span>
-                        <span id="selectedCount" class="text-lg font-bold text-indigo-600">0</span>
-                        <span class="text-lg text-gray-700">/20</span>
-                    </div>
-                    <button onclick="buildUnifiedAI()" id="buildButton" class="bg-green-600 text-white px-8 py-3 rounded-lg font-semibold hover:bg-green-700 transition-colors disabled:bg-gray-400 disabled:cursor-not-allowed" disabled>
-                        <i class="fas fa-hammer mr-2"></i>Build Unified AI
-                    </button>
-                </div>
-            </div>
+const cfg = loadConfig();
 
-            <!-- Unified AI Preview -->
-            <div id="unifiedPreview" class="bg-gradient-to-r from-purple-500 to-indigo-600 text-white rounded-2xl p-8 hidden">
-                <h3 class="text-2xl font-bold mb-4">Your Unified AI is Ready!</h3>
-                <div id="unifiedCapabilities" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 mb-6">
-                    <!-- Capabilities will be populated here -->
-                </div>
-                <div class="flex space-x-4">
-                    <button onclick="deployUnifiedAI()" class="bg-white text-purple-600 px-6 py-3 rounded-lg font-semibold hover:bg-gray-100 transition-colors">
-                        <i class="fas fa-rocket mr-2"></i>Deploy Now
-                    </button>
-                    <button onclick="testUnifiedAI()" class="border-2 border-white text-white px-6 py-3 rounded-lg font-semibold hover:bg-white hover:text-purple-600 transition-colors">
-                        <i class="fas fa-play mr-2"></i>Test AI
-                    </button>
-                </div>
-            </div>
-        </div>
-    </section>
+/* Chat */
+el('sendChat').addEventListener('click', async ()=>{
+  const text = el('chatText').value.trim(); if(!text) return alert('Type a message');
+  const c = loadConfig(); if(!c.chat) return alert('Set Chat webhook in Settings');
+  el('chatBusy').classList.remove('hidden');
+  el('chatResult').innerHTML = '';
+  const resp = await postJSON(c.chat, { text });
+  el('chatBusy').classList.add('hidden');
+  if(resp.error) el('chatResult').innerHTML = `<div class="text-red-600 small">Error: ${resp.error}</div>`;
+  else el('chatResult').innerHTML = `<div class="whitespace-pre-wrap">${resp.answer || resp.result || JSON.stringify(resp)}</div>`;
+});
+el('clearChat').addEventListener('click', ()=>{ el('chatText').value=''; el('chatResult').innerHTML=''; });
 
-    <!-- All AI Agents Section -->
-    <section id="agents" class="py-20 bg-gray-50">
-        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-            <div class="text-center mb-16">
-                <h2 class="text-4xl font-bold text-gray-900 mb-4">All 20 AI Agents</h2>
-                <p class="text-xl text-gray-600">Individual agents you can use separately or combine</p>
-            </div>
+/* Summarizer */
+el('sendSum').addEventListener('click', async ()=>{
+  const text = el('sumText').value.trim(); if(!text) return alert('Paste text to summarize');
+  const c = loadConfig(); const url = c.summary || c.chat; if(!url) return alert('Set Summary or Chat webhook');
+  el('sumBusy').classList.remove('hidden'); el('sumResult').innerHTML='';
+  const resp = await postJSON(url, { text, mode:'summary' });
+  el('sumBusy').classList.add('hidden');
+  if(resp.error) el('sumResult').innerHTML = `<div class="text-red-600 small">Error: ${resp.error}</div>`;
+  else el('sumResult').innerHTML = `<div class="whitespace-pre-wrap">${resp.summary||resp.result||JSON.stringify(resp)}</div>`;
+});
+el('clearSum').addEventListener('click', ()=>{ el('sumText').value=''; el('sumResult').innerHTML=''; });
 
-            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-                <!-- Agent cards will be populated by JavaScript -->
-                <div id="agentsGrid" class="contents">
-                    <!-- Agents will be inserted here -->
-                </div>
-            </div>
-        </div>
-    </section>
+/* Translator */
+el('sendTrans').addEventListener('click', async ()=>{
+  const q = el('transText').value.trim(); if(!q) return alert('Type text to translate');
+  el('transResult').innerHTML = '<div class="small text-gray-500">Translating... <span class="spinner inline-block"></span></div>';
+  try{
+    const from = el('fromLang').value, to = el('toLang').value;
+    const r = await fetch('https://libretranslate.de/translate', { method:'POST', headers:{ 'Content-Type':'application/json' }, body: JSON.stringify({ q, source: from==='auto'?'auto':from, target: to, format:'text' })});
+    if(!r.ok) throw new Error('Status '+r.status);
+    const j = await r.json();
+    el('transResult').innerHTML = `<div class="whitespace-pre-wrap">${j.translatedText||JSON.stringify(j)}</div>`;
+  } catch(e){ el('transResult').innerHTML = `<div class="text-red-600 small">Error: ${e}</div>`; }
+});
 
-    <!-- Features Section -->
-    <section id="features" class="py-20 bg-white">
-        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-            <div class="text-center mb-16">
-                <h2 class="text-4xl font-bold text-gray-900 mb-4">Why Choose Unified AI?</h2>
-                <p class="text-xl text-gray-600">The power of 20 AI agents in one intelligent system</p>
-            </div>
+/* Grammar Fix */
+el('sendFix').addEventListener('click', async ()=>{
+  const text = el('fixText').value.trim(); if(!text) return alert('Enter text');
+  const tone = el('fixTone').value; const c = loadConfig(); if(!c.fix) return alert('Set Grammar webhook');
+  el('fixResult').innerHTML = '<div class="small text-gray-500">Fixing... <span class="spinner inline-block"></span></div>';
+  const resp = await postJSON(c.fix, { text, tone });
+  if(resp.error) el('fixResult').innerHTML = `<div class="text-red-600 small">Error: ${resp.error}</div>`;
+  else el('fixResult').innerHTML = `<div class="whitespace-pre-wrap">${resp.fixed||resp.result||JSON.stringify(resp)}</div>`;
+});
 
-            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-                <div class="bg-white rounded-2xl shadow-lg p-8 card-hover">
-                    <div class="w-16 h-16 bg-purple-100 rounded-lg flex items-center justify-center mb-6">
-                        <i class="fas fa-brain text-2xl text-purple-600"></i>
-                    </div>
-                    <h3 class="text-xl font-bold text-gray-900 mb-4">20x Intelligence</h3>
-                    <p class="text-gray-600">Combine the capabilities of all 20 world-class AI agents into one super-intelligent system.</p>
-                </div>
+/* Image */
+el('sendImg').addEventListener('click', async ()=>{
+  const prompt = el('imgPrompt').value.trim(); if(!prompt) return alert('Enter prompt');
+  const count = parseInt(el('imgCount').value)||1; const c = loadConfig(); if(!c.image) return alert('Set Image webhook');
+  el('imgResult').innerHTML = '<div class="small text-gray-500">Generating... <span class="spinner inline-block"></span></div>';
+  const resp = await postJSON(c.image, { prompt, count });
+  if(resp.error) el('imgResult').innerHTML = `<div class="text-red-600 small">Error: ${resp.error}</div>`;
+  else {
+    if(resp.images && Array.isArray(resp.images)) el('imgResult').innerHTML = resp.images.map(u=>`<img src="${u}" class="max-h-32 m-1 rounded">`).join('');
+    else if(resp.image_url) el('imgResult').innerHTML = `<img src="${resp.image_url}" class="max-h-40 rounded">`;
+    else if(resp.image_b64) el('imgResult').innerHTML = `<img src="data:image/png;base64,${resp.image_b64}" class="max-h-40 rounded">`;
+    else el('imgResult').innerHTML = `<pre class="small">${JSON.stringify(resp,null,2)}</pre>`;
+  }
+});
 
-                <div class="bg-white rounded-2xl shadow-lg p-8 card-hover">
-                    <div class="w-16 h-16 bg-blue-100 rounded-lg flex items-center justify-center mb-6">
-                        <i class="fas fa-puzzle-piece text-2xl text-blue-600"></i>
-                    </div>
-                    <h3 class="text-xl font-bold text-gray-900 mb-4">Custom Combinations</h3>
-                    <p class="text-gray-600">Mix and match AI agents to create the perfect combination for your specific needs.</p>
-                </div>
+/* TTS */
+function populateVoices(){ const sel = el('voiceSelect'); sel.innerHTML=''; const v = speechSynthesis.getVoices(); v.forEach(x=>{ const o=document.createElement('option'); o.value=x.name; o.textContent=`${x.name} (${x.lang})`; sel.appendChild(o); }); }
+if('speechSynthesis' in window){ populateVoices(); window.speechSynthesis.onvoiceschanged = populateVoices; }
+el('playTTS').addEventListener('click', ()=>{ const t=el('ttsText').value.trim(); if(!t) return alert('Enter text'); if('speechSynthesis' in window){ window.speechSynthesis.cancel(); const u=new SpeechSynthesisUtterance(t); const sel=el('voiceSelect').value; if(sel){ const v=speechSynthesis.getVoices().find(x=>x.name===sel); if(v) u.voice=v; } window.speechSynthesis.speak(u); } else alert('TTS not supported'); });
+el('stopTTS').addEventListener('click', ()=>{ if(window.speechSynthesis) window.speechSynthesis.cancel(); });
 
-                <div class="bg-white rounded-2xl shadow-lg p-8 card-hover">
-                    <div class="w-16 h-16 bg-green-100 rounded-lg flex items-center justify-center mb-6">
-                        <i class="fas fa-rocket text-2xl text-green-600"></i>
-                    </div>
-                    <h3 class="text-xl font-bold text-gray-900 mb-4">Instant Deployment</h3>
-                    <p class="text-gray-600">Deploy your unified AI instantly to web, mobile, or any platform with one click.</p>
-                </div>
+/* Captioner */
+el('sendCap').addEventListener('click', async ()=>{
+  const f = el('capFile').files[0]; if(!f) return alert('Choose file');
+  const c = loadConfig(); if(!c.caption) return alert('Set Caption webhook');
+  el('capResult').innerHTML = '<div class="small text-gray-500">Uploading... <span class="spinner inline-block"></span></div>';
+  const fd = new FormData(); fd.append('file', f);
+  const resp = await postForm(c.caption, fd);
+  if(resp.error) el('capResult').innerHTML = `<div class="text-red-600 small">Error: ${resp.error}</div>`;
+  else {
+    el('capResult').innerHTML = (resp.transcript? `<div class="whitespace-pre-wrap">${resp.transcript}</div>`:'') + (resp.srt_url? `<div class="mt-2"><a class="text-indigo-600 small" href="${resp.srt_url}" target="_blank">Download SRT</a></div>`:'');
+  }
+});
 
-                <div class="bg-white rounded-2xl shadow-lg p-8 card-hover">
-                    <div class="w-16 h-16 bg-red-100 rounded-lg flex items-center justify-center mb-6">
-                        <i class="fas fa-download text-2xl text-red-600"></i>
-                    </div>
-                    <h3 class="text-xl font-bold text-gray-900 mb-4">APK Export</h3>
-                    <p class="text-gray-600">Download the entire platform as an APK file for Android installation.</p>
-                </div>
+/* Email */
+el('genEmail').addEventListener('click', async ()=>{
+  const to = el('emailTo').value.trim(), sub = el('emailSub').value.trim(), body = el('emailBody').value.trim();
+  if(!to && !body) return alert('Provide recipient or body');
+  const c = loadConfig(); const url = c.chat || c.summary; if(!url) return alert('Set Chat/Summary webhook to generate');
+  el('emailResult').innerHTML = '<div class="small text-gray-500">Generating... <span class="spinner inline-block"></span></div>';
+  const resp = await postJSON(url, { prompt:`Write an email to:${to} subject:${sub} body:${body}`, mode:'email' });
+  if(resp.error) el('emailResult').innerHTML = `<div class="text-red-600 small">Error: ${resp.error}</div>`;
+  else el('emailResult').innerHTML = `<div class="whitespace-pre-wrap">${resp.email||resp.result||JSON.stringify(resp)}</div>`;
+});
+el('sendEmail').addEventListener('click', async ()=>{
+  const to = el('emailTo').value.trim(), sub = el('emailSub').value.trim(), body = el('emailBody').value.trim();
+  if(!to||!sub||!body) return alert('Fill to, subject, body');
+  const c = loadConfig(); if(!c.email) return alert('Set Email webhook');
+  el('emailResult').innerHTML = '<div class="small text-gray-500">Sending... <span class="spinner inline-block"></span></div>';
+  const resp = await postJSON(c.email, { to, subject: sub, body });
+  if(resp.error) el('emailResult').innerHTML = `<div class="text-red-600 small">Error: ${resp.error}</div>`;
+  else el('emailResult').innerHTML = `<div class="text-green-600 small">Sent: ${resp.message||JSON.stringify(resp)}</div>`;
+});
 
-                <div class="bg-white rounded-2xl shadow-lg p-8 card-hover">
-                    <div class="w-16 h-16 bg-yellow-100 rounded-lg flex items-center justify-center mb-6">
-                        <i class="fas fa-cogs text-2xl text-yellow-600"></i>
-                    </div>
-                    <h3 class="text-xl font-bold text-gray-900 mb-4">Advanced Customization</h3>
-                    <p class="text-gray-600">Fine-tune every aspect of your unified AI with our powerful customization tools.</p>
-                </div>
+/* Scheduler */
+el('schedReg').addEventListener('click', async ()=>{
+  const name = el('schedName').value.trim(), cron = el('schedCron').value.trim(); if(!name||!cron) return alert('Provide name and cron');
+  const c = loadConfig(); if(!c.sched) return alert('Set Scheduler webhook');
+  el('schedResult').innerHTML = '<div class="small text-gray-500">Registering... <span class="spinner inline-block"></span></div>';
+  const resp = await postJSON(c.sched, { name, cron });
+  if(resp.error) el('schedResult').innerHTML = `<div class="text-red-600 small">Error: ${resp.error}</div>`;
+  else el('schedResult').innerHTML = `<div class="whitespace-pre-wrap">${resp.message||JSON.stringify(resp)}</div>`;
+});
 
-                <div class="bg-white rounded-2xl shadow-lg p-8 card-hover">
-                    <div class="w-16 h-16 bg-indigo-100 rounded-lg flex items-center justify-center mb-6">
-                        <i class="fas fa-chart-bar text-2xl text-indigo-600"></i>
-                    </div>
-                    <h3 class="text-xl font-bold text-gray-900 mb-4">Performance Analytics</h3>
-                    <p class="text-gray-600">Monitor the performance of your unified AI with detailed analytics and insights.</p>
-                </div>
-            </div>
-        </div>
-    </section>
-
-    <!-- Build Modal -->
-    <div id="buildModal" class="fixed inset-0 build-modal hidden items-center justify-center z-50">
-        <div class="bg-white rounded-2xl max-w-4xl mx-4 w-full max-h-screen overflow-hidden">
-            <div class="flex justify-between items-center p-6 border-b border-gray-200">
-                <h3 class="text-2xl font-bold text-gray-900">Build Custom AI Agent</h3>
-                <button onclick="closeBuildModal()" class="text-gray-500 hover:text-gray-700">
-                    <i class="fas fa-times text-2xl"></i>
-                </button>
-            </div>
-            
-            <div class="p-6">
-                <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
-                    <div>
-                        <h4 class="text-lg font-bold text-gray-900 mb-4">1. Select Base Agent</h4>
-                        <select id="baseAgent" class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 mb-4">
-                            <option value="">Choose a base agent...</option>
-                            <option value="gpt4">GPT-4 Omni (General Intelligence)</option>
-                            <option value="claude">Claude 3.5 Sonnet (Creative)</option>
-                            <option value="gemini">Gemini Pro 1.5 (Multimodal)</option>
-                            <option value="dalle">DALL-E 3 (Image Generation)</option>
-                            <option value="copilot">GitHub Copilot (Code Assistant)</option>
-                        </select>
-
-                        <h4 class="text-lg font-bold text-gray-900 mb-4">2. Add Specializations</h4>
-                        <div class="space-y-2 max-h-40 overflow-y-auto">
-                            <label class="flex items-center">
-                                <input type="checkbox" class="mr-3 specialization" value="creative"> 🎨 Creative & Design
-                            </label>
-                            <label class="flex items-center">
-                                <input type="checkbox" class="mr-3 specialization" value="business"> 💼 Business & Strategy
-                            </label>
-                            <label class="flex items-center">
-                                <input type="checkbox" class="mr-3 specialization" value="code"> 💻 Programming & Development
-                            </label>
-                            <label class="flex items-center">
-                                <input type="checkbox" class="mr-3 specialization" value="marketing"> 🎯 Marketing & Sales
-                            </label>
-                            <label class="flex items-center">
-                                <input type="checkbox" class="mr-3 specialization" value="support"> 🎧 Customer Support
-                            </label>
-                            <label class="flex items-center">
-                                <input type="checkbox" class="mr-3 specialization" value="research"> 🔬 Research & Analysis
-                            </label>
-                            <label class="flex items-center">
-                                <input type="checkbox" class="mr-3 specialization" value="video"> 🎥 Video & Animation
-                            </label>
-                            <label class="flex items-center">
-                                <input type="checkbox" class="mr-3 specialization" value="voice"> 🎤 Voice & Audio
-                            </label>
-                        </div>
-                    </div>
-
-                    <div>
-                        <h4 class="text-lg font-bold text-gray-900 mb-4">3. Configure Settings</h4>
-                        <div class="space-y-4">
-                            <div>
-                                <label class="block text-sm font-medium text-gray-700 mb-2">Agent Name</label>
-                                <input type="text" id="customAgentName" placeholder="My Custom AI Agent" class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500">
-                            </div>
-                            <div>
-                                <label class="block text-sm font-medium text-gray-700 mb-2">Primary Function</label>
-                                <select id="primaryFunction" class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500">
-                                    <option value="general">General Assistant</option>
-                                    <option value="creative">Creative Projects</option>
-                                    <option value="business">Business Tasks</option>
-                                    <option value="technical">Technical Work</option>
-                                    <option value="marketing">Marketing Campaigns</option>
-                                </select>
-                            </div>
-                            <div>
-                                <label class="block text-sm font-medium text-gray-700 mb-2">Intelligence Level</label>
-                                <input type="range" id="intelligenceLevel" min="1" max="10" value="7" class="w-full">
-                                <div class="flex justify-between text-xs text-gray-500">
-                                    <span>Basic</span>
-                                    <span>Advanced</span>
-                                    <span>Super Intelligence</span>
-                                </div>
-                            </div>
-                        </div>
-
-                        <div class="mt-6">
-                            <h4 class="text-lg font-bold text-gray-900 mb-4">4. Build & Deploy</h4>
-                            <button onclick="buildCustomAgent()" class="w-full bg-green-600 text-white py-3 rounded-lg font-semibold hover:bg-green-700 transition-colors">
-                                <i class="fas fa-hammer mr-2"></i>Build & Deploy Custom AI
-                            </button>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </div>
-
-    <!-- Demo Modal -->
-    <div id="demoModal" class="fixed inset-0 demo-modal hidden items-center justify-center z-50">
-        <div class="bg-white rounded-2xl max-w-4xl mx-4 w-full max-h-screen overflow-hidden">
-            <div class="flex justify-between items-center p-6 border-b border-gray-200">
-                <h3 class="text-2xl font-bold text-gray-900">Unified AI Demo</h3>
-                <button onclick="closeDemoModal()" class="text-gray-500 hover:text-gray-700">
-                    <i class="fas fa-times text-2xl"></i>
-                </button>
-            </div>
-            
-            <div class="p-6">
-                <div class="mb-6">
-                    <div class="bg-purple-100 p-4 rounded-lg mb-4">
-                        <p class="text-sm text-purple-800">
-                            <i class="fas fa-brain mr-2"></i>
-                            <strong>Unified AI Active:</strong> Combining GPT-4 Omni + Claude 3.5 + Gemini Pro + 17 other agents
-                        </p>
-                    </div>
-                </div>
-
-                <div class="bg-gray-100 rounded-lg p-4 h-96 overflow-y-auto mb-4" id="chatContainer">
-                    <div class="space-y-4" id="chatMessages">
-                        <div class="chat-bubble agent rounded-lg p-3">
-                            <p class="text-sm">🚀 Hello! I'm your Unified AI, combining the power of all 20 world-class AI agents. What can I help you with today?</p>
-                        </div>
-                    </div>
-                </div>
-
-                <div class="flex space-x-4">
-                    <input type="text" id="userInput" placeholder="Ask me anything..." class="flex-1 px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500">
-                    <button onclick="sendUnifiedMessage()" class="bg-indigo-600 text-white px-6 py-3 rounded-lg hover:bg-indigo-700 transition-colors">
-                        <i class="fas fa-paper-plane"></i>
-                    </button>
-                </div>
-            </div>
-        </div>
-    </div>
-
-    <!-- Footer -->
-    <footer class="bg-gray-900 text-white py-12">
-        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-            <div class="text-center">
-                <h3 class="text-2xl font-bold mb-4">AI Agent Hub</h3>
-                <p class="text-gray-400 mb-6">Unifying the world's best AI agents into one powerful platform</p>
-                <p class="text-gray-500 text-sm">© 2025 AI Agent Hub. All rights reserved.</p>
-            </div>
-        </div>
-    </footer>
-
-    <script>
-        // Top 20 AI Agents Data
-        const topAgents = [
-            {
-                id: 1,
-                name: "GPT-4 Omni",
-                category: "General Intelligence",
-                specialty: "Advanced reasoning, coding, creative writing",
-                capabilities: ["Text Generation", "Code Writing", "Problem Solving", "Analysis"],
-                icon: "fas fa-brain",
-                color: "bg-purple-500",
-                rating: 4.9,
-                description: "OpenAI's most advanced multimodal AI model with superior reasoning capabilities"
-            },
-            {
-                id: 2,
-                name: "Claude 3.5 Sonnet",
-                category: "Creative Intelligence",
-                specialty: "Creative writing, analysis, ethical reasoning",
-                capabilities: ["Creative Writing", "Analysis", "Ethical Reasoning", "Code Generation"],
-                icon: "fas fa-feather-alt",
-                color: "bg-orange-500",
-                rating: 4.8,
-                description: "Anthropic's most creative and capable AI assistant"
-            },
-            {
-                id: 3,
-                name: "Gemini Pro 1.5",
-                category: "Multimodal AI",
-                specialty: "Image analysis, video understanding, multilingual",
-                capabilities: ["Image Analysis", "Video Understanding", "Multilingual", "Data Extraction"],
-                icon: "fas fa-eye",
-                color: "bg-blue-500",
-                rating: 4.7,
-                description: "Google's multimodal AI with advanced vision capabilities"
-            },
-            {
-                id: 4,
-                name: "DALL-E 3",
-                category: "Image Generation",
-                specialty: "AI art, image creation, visual design",
-                capabilities: ["Image Generation", "Art Creation", "Design", "Visual Concepts"],
-                icon: "fas fa-palette",
-                color: "bg-pink-500",
-                rating: 4.8,
-                description: "OpenAI's most advanced image generation model"
-            },
-            {
-                id: 5,
-                name: "Midjourney v6",
-                category: "Artistic AI",
-                specialty: "Stunning artwork, creative visuals, artistic styles",
-                capabilities: ["Artistic Images", "Style Transfer", "Creative Visuals", "Concept Art"],
-                icon: "fas fa-image",
-                color: "bg-indigo-500",
-                rating: 4.9,
-                description: "The most artistic AI image generator"
-            },
-            {
-                id: 6,
-                name: "Stable Diffusion XL",
-                category: "Open Source AI",
-                specialty: "Customizable image generation, open source",
-                capabilities: ["Custom Images", "Open Source", "Fine-tuning", "Art Generation"],
-                icon: "fas fa-cogs",
-                color: "bg-green-500",
-                rating: 4.6,
-                description: "Powerful open-source image generation model"
-            },
-            {
-                id: 7,
-                name: "GitHub Copilot",
-                category: "Code Assistant",
-                specialty: "Code completion, programming assistance",
-                capabilities: ["Code Completion", "Programming Help", "Bug Fixing", "Code Review"],
-                icon: "fas fa-code",
-                color: "bg-gray-800",
-                rating: 4.7,
-                description: "AI-powered programming assistant"
-            },
-            {
-                id: 8,
-                name: "Tabnine",
-                category: "Code AI",
-                specialty: "AI code completion, development workflow",
-                capabilities: ["Smart Completion", "Code Prediction", "Development Flow", "IDE Integration"],
-                icon: "fas fa-terminal",
-                color: "bg-teal-500",
-                rating: 4.5,
-                description: "AI assistant for faster coding"
-            },
-            {
-                id: 9,
-                name: "Jasper AI",
-                category: "Content Marketing",
-                specialty: "Marketing copy, blog posts, social media",
-                capabilities: ["Marketing Copy", "Blog Writing", "Social Media", "SEO Content"],
-                icon: "fas fa-bullhorn",
-                color: "bg-red-500",
-                rating: 4.6,
-                description: "AI writing assistant for marketers"
-            },
-            {
-                id: 10,
-                name: "Copy.ai",
-                category: "Copywriting",
-                specialty: "Sales copy, email campaigns, ad copy",
-                capabilities: ["Sales Copy", "Email Campaigns", "Ad Copy", "Brand Messaging"],
-                icon: "fas fa-pen-fancy",
-                color: "bg-yellow-500",
-                rating: 4.4,
-                description: "AI copywriting tool for businesses"
-            },
-            {
-                id: 11,
-                name: "Synthesia",
-                category: "Video AI",
-                specialty: "AI video generation, avatar creation",
-                capabilities: ["Video Generation", "AI Avatars", "Text-to-Video", "Multilingual Videos"],
-                icon: "fas fa-video",
-                color: "bg-purple-600",
-                rating: 4.5,
-                description: "AI video generation platform"
-            },
-            {
-                id: 12,
-                name: "Runway ML",
-                category: "Creative Video",
-                specialty: "Video editing, effects, generation",
-                capabilities: ["Video Editing", "AI Effects", "Video Generation", "Creative Tools"],
-                icon: "fas fa-film",
-                color: "bg-pink-600",
-                rating: 4.7,
-                description: "AI-powered creative video tools"
-            },
-            {
-                id: 13,
-                name: "ElevenLabs",
-                category: "Voice AI",
-                specialty: "Realistic voice synthesis, cloning",
-                capabilities: ["Voice Synthesis", "Voice Cloning", "Multilingual TTS", "Audio Production"],
-                icon: "fas fa-microphone",
-                color: "bg-blue-600",
-                rating: 4.8,
-                description: "Most realistic AI voice generator"
-            },
-            {
-                id: 14,
-                name: "Murf AI",
-                category: "Voice Generation",
-                specialty: "Professional voiceovers, presentations",
-                capabilities: ["Voiceovers", "Presentation Audio", "E-learning Voices", "Commercial Audio"],
-                icon: "fas fa-volume-up",
-                color: "bg-teal-600",
-                rating: 4.6,
-                description: "AI voice generator for professionals"
-            },
-            {
-                id: 15,
-                name: "Notion AI",
-                category: "Productivity",
-                specialty: "Note-taking, document creation, task management",
-                capabilities: ["Note Taking", "Document Creation", "Task Management", "Knowledge Base"],
-                icon: "fas fa-sticky-note",
-                color: "bg-gray-600",
-                rating: 4.5,
-                description: "AI-powered workspace and knowledge management"
-            },
-            {
-                id: 16,
-                name: "Mem AI",
-                category: "Knowledge Management",
-                specialty: "Smart note organization, knowledge graphs",
-                capabilities: ["Smart Organization", "Knowledge Graphs", "AI Search", "Collaboration"],
-                icon: "fas fa-sitemap",
-                color: "bg-indigo-600",
-                rating: 4.4,
-                description: "AI-powered knowledge management system"
-            },
-            {
-                id: 17,
-                name: "Perplexity AI",
-                category: "Search & Research",
-                specialty: "Real-time information, accurate answers",
-                capabilities: ["Real-time Search", "Accurate Answers", "Source Citation", "Research Assistance"],
-                icon: "fas fa-search",
-                color: "bg-blue-700",
-                rating: 4.7,
-                description: "AI search engine with real-time information"
-            },
-            {
-                id: 18,
-                name: "You.com",
-                category: "AI Search",
-                specialty: "Personalized search, AI assistant integration",
-                capabilities: ["Personalized Search", "AI Assistant", "Privacy-focused", "Custom Results"],
-                icon: "fas fa-user-cog",
-                color: "bg-purple-700",
-                rating: 4.3,
-                description: "AI-powered personalized search engine"
-            },
-            {
-                id: 19,
-                name: "Character.AI",
-                category: "Character Chat",
-                specialty: "Role-playing, character conversations",
-                capabilities: ["Character Chat", "Role-playing", "Storytelling", "Entertainment"],
-                icon: "fas fa-theater-masks",
-                color: "bg-pink-700",
-                rating: 4.6,
-                description: "AI characters for conversation and role-play"
-            },
-            {
-                id: 20,
-                name: "Replika",
-                category: "Personal AI",
-                specialty: "Emotional support, personal companionship",
-                capabilities: ["Emotional Support", "Personal Companion", "Mental Health", "Conversation"],
-                icon: "fas fa-heart",
-                color: "bg-red-600",
-                rating: 4.2,
-                description: "AI companion for emotional support and conversation"
-            }
-        ];
-
-        let selectedAgents = [];
-        let unifiedAI = null;
-
-        // Initialize
-        document.addEventListener('DOMContentLoaded', function() {
-            initializeTypedText();
-            renderAgents();
-            renderAgentSelector();
-            setupEventListeners();
-        });
-
-        function initializeTypedText() {
-            new Typed('#typed-text', {
-                strings: ['AI Intelligence', 'Super Intelligence', 'Mega Mind', 'AI Legion', 'Collective Intelligence'],
-                typeSpeed: 100,
-                backSpeed: 50,
-                backDelay: 2000,
-                loop: true
-            });
-        }
-
-        function renderAgents() {
-            const agentsGrid = document.getElementById('agentsGrid');
-            
-            agentsGrid.innerHTML = topAgents.map(agent => `
-                <div class="bg-white rounded-2xl shadow-lg p-6 card-hover cursor-pointer" onclick="showAgentDetails(${agent.id})">
-                    <div class="flex items-center mb-4">
-                        <div class="w-12 h-12 ${agent.color} rounded-lg flex items-center justify-center mr-4">
-                            <i class="${agent.icon} text-white text-xl"></i>
-                        </div>
-                        <div class="flex-1">
-                            <h3 class="text-lg font-bold text-gray-900">${agent.name}</h3>
-                            <p class="text-sm text-gray-600">${agent.category}</p>
-                        </div>
-                        <div class="text-right">
-                            <div class="flex items-center text-yellow-500 mb-1">
-                                <i class="fas fa-star mr-1"></i>
-                                <span class="text-sm font-semibold">${agent.rating}</span>
-                            </div>
-                        </div>
-                    </div>
-                    
-                    <p class="text-gray-600 text-sm mb-4">${agent.specialty}</p>
-                    
-                    <div class="flex flex-wrap gap-2 mb-4">
-                        ${agent.capabilities.slice(0, 3).map(capability => 
-                            `<span class="bg-gray-100 text-gray-700 text-xs px-2 py-1 rounded-full">${capability}</span>`
-                        ).join('')}
-                    </div>
-                    
-                    <div class="flex space-x-2">
-                        <button onclick="event.stopPropagation(); demoAgent(${agent.id})" class="flex-1 bg-blue-600 text-white py-2 px-4 rounded-lg hover:bg-blue-700 transition-colors text-sm">
-                            <i class="fas fa-play mr-2"></i>Demo
-                        </button>
-                        <button onclick="event.stopPropagation(); addToUnified(${agent.id})" class="flex-1 bg-green-600 text-white py-2 px-4 rounded-lg hover:bg-green-700 transition-colors text-sm">
-                            <i class="fas fa-plus mr-2"></i>Add
-                        </button>
-                    </div>
-                </div>
-            `).join('');
-
-            // Animate agent cards
-            anime({
-                targets: '.card-hover',
-                translateY: [50, 0],
-                opacity: [0, 1],
-                delay: anime.stagger(100),
-                duration: 800,
-                easing: 'easeOutQuad'
-            });
-        }
-
-        function renderAgentSelector() {
-            const agentSelector = document.getElementById('agentSelector');
-            
-            agentSelector.innerHTML = topAgents.map(agent => `
-                <div class="agent-tile bg-white rounded-lg p-4 border-2 border-gray-200 hover:border-indigo-500 transition-colors" 
-                     onclick="toggleAgentSelection(${agent.id})" data-agent-id="${agent.id}">
-                    <div class="text-center">
-                        <div class="w-10 h-10 ${agent.color} rounded-lg flex items-center justify-center mx-auto mb-2">
-                            <i class="${agent.icon} text-white text-sm"></i>
-                        </div>
-                        <p class="text-xs font-semibold text-gray-900">${agent.name}</p>
-                        <p class="text-xs text-gray-600">${agent.category}</p>
-                    </div>
-                </div>
-            `).join('');
-        }
-
-        function toggleAgentSelection(agentId) {
-            const agentTile = document.querySelector(`[data-agent-id="${agentId}"]`);
-            const agent = topAgents.find(a => a.id === agentId);
-            
-            if (selectedAgents.includes(agentId)) {
-                selectedAgents = selectedAgents.filter(id => id !== agentId);
-                agentTile.classList.remove('border-indigo-500', 'bg-indigo-50');
-                agentTile.classList.add('border-gray-200');
-            } else {
-                selectedAgents.push(agentId);
-                agentTile.classList.remove('border-gray-200');
-                agentTile.classList.add('border-indigo-500', 'bg-indigo-50');
-            }
-            
-            updateSelectedCount();
-            updateBuildButton();
-        }
-
-        function updateSelectedCount() {
-            document.getElementById('selectedCount').textContent = selectedAgents.length;
-        }
-
-        function updateBuildButton() {
-            const buildButton = document.getElementById('buildButton');
-            if (selectedAgents.length > 0) {
-                buildButton.disabled = false;
-                buildButton.classList.remove('disabled:bg-gray-400', 'disabled:cursor-not-allowed');
-            } else {
-                buildButton.disabled = true;
-                buildButton.classList.add('disabled:bg-gray-400', 'disabled:cursor-not-allowed');
-            }
-        }
-
-        function buildUnifiedAI() {
-            if (selectedAgents.length === 0) return;
-            
-            const selectedAgentData = selectedAgents.map(id => topAgents.find(a => a.id === id));
-            
-            unifiedAI = {
-                id: Date.now(),
-                name: `Unified AI (${selectedAgents.length} agents)`,
-                agents: selectedAgentData,
-                capabilities: [...new Set(selectedAgentData.flatMap(agent => agent.capabilities))],
-                createdAt: new Date().toISOString(),
-                status: 'ready'
-            };
-
-            showUnifiedPreview();
-            
-            // Animate preview appearance
-            anime({
-                targets: '#unifiedPreview',
-                translateY: [50, 0],
-                opacity: [0, 1],
-                duration: 800,
-                easing: 'easeOutQuad'
-            });
-        }
-
-        function showUnifiedPreview() {
-            const preview = document.getElementById('unifiedPreview');
-            const capabilities = document.getElementById('unifiedCapabilities');
-            
-            preview.classList.remove('hidden');
-            
-            capabilities.innerHTML = unifiedAI.capabilities.slice(0, 9).map(capability => `
-                <div class="bg-white bg-opacity-20 rounded-lg p-3">
-                    <p class="text-sm font-semibold">${capability}</p>
-                </div>
-            `).join('');
-        }
-
-        function deployUnifiedAI() {
-            if (!unifiedAI) return;
-            
-            // Save to localStorage
-            const agents = JSON.parse(localStorage.getItem('agents') || '[]');
-            const newAgent = {
-                ...unifiedAI,
-                status: 'active',
-                conversations: 0,
-                rating: 0
-            };
-            agents.push(newAgent);
-            localStorage.setItem('agents', JSON.stringify(agents));
-            
-            alert('🎉 Unified AI deployed successfully!\n\nYour custom AI combination is now active and ready to use.');
-            
-            // Reset selection
-            selectedAgents = [];
-            document.getElementById('unifiedPreview').classList.add('hidden');
-            renderAgentSelector();
-            updateSelectedCount();
-            updateBuildButton();
-        }
-
-        function testUnifiedAI() {
-            showUnifiedDemo();
-        }
-
-        function showUnifiedDemo() {
-            document.getElementById('demoModal').classList.remove('hidden');
-            document.getElementById('demoModal').classList.add('flex');
-        }
-
-        function closeDemoModal() {
-            document.getElementById('demoModal').classList.add('hidden');
-            document.getElementById('demoModal').classList.remove('flex');
-        }
-
-        function sendUnifiedMessage() {
-            const userInput = document.getElementById('userInput');
-            const message = userInput.value.trim();
-            
-            if (!message) return;
-
-            const chatMessages = document.getElementById('chatMessages');
-            
-            // Add user message
-            chatMessages.innerHTML += `
-                <div class="chat-bubble user rounded-lg p-3 text-white">
-                    <p class="text-sm">${message}</p>
-                </div>
-            `;
-
-            // Clear input
-            userInput.value = '';
-
-            // Generate unified response
-            setTimeout(() => {
-                const response = generateUnifiedResponse(message);
-                chatMessages.innerHTML += `
-                    <div class="chat-bubble agent rounded-lg p-3">
-                        <p class="text-sm">${response}</p>
-                    </div>
-                `;
-                scrollChatToBottom();
-            }, 1000);
-
-            scrollChatToBottom();
-        }
-
-        function generateUnifiedResponse(message) {
-            const unifiedResponses = [
-                "🚀 As your Unified AI, I can combine creative thinking with business strategy to give you the perfect solution!",
-                "💡 Drawing from all 20 AI agents, I can provide insights that no single agent could offer alone.",
-                "🎯 My multimodal capabilities allow me to analyze text, generate images, write code, and create strategies simultaneously!",
-                "⚡ With the power of GPT-4, Claude 3.5, Gemini Pro, and 17 other agents, I can handle any task you throw at me!",
-                "🌟 I'm not just an AI - I'm a symphony of the world's best artificial intelligence, working in perfect harmony for you."
-            ];
-
-            return unifiedResponses[Math.floor(Math.random() * unifiedResponses.length)];
-        }
-
-        function scrollChatToBottom() {
-            const chatContainer = document.getElementById('chatContainer');
-            chatContainer.scrollTop = chatContainer.scrollHeight;
-        }
-
-        function openBuildModal() {
-            document.getElementById('buildModal').classList.remove('hidden');
-            document.getElementById('buildModal').classList.add('flex');
-        }
-
-        function closeBuildModal() {
-            document.getElementById('buildModal').classList.add('hidden');
-            document.getElementById('buildModal').classList.remove('flex');
-        }
-
-        function buildCustomAgent() {
-            const baseAgent = document.getElementById('baseAgent').value;
-            const specializations = Array.from(document.querySelectorAll('.specialization:checked')).map(cb => cb.value);
-            const agentName = document.getElementById('customAgentName').value || 'Custom AI Agent';
-            const primaryFunction = document.getElementById('primaryFunction').value;
-            const intelligenceLevel = document.getElementById('intelligenceLevel').value;
-
-            if (!baseAgent) {
-                alert('Please select a base agent');
-                return;
-            }
-
-            const customAgent = {
-                id: Date.now(),
-                name: agentName,
-                baseAgent: baseAgent,
-                specializations: specializations,
-                primaryFunction: primaryFunction,
-                intelligenceLevel: intelligenceLevel,
-                status: 'active',
-                createdAt: new Date().toISOString(),
-                type: 'custom'
-            };
-
-            // Save to localStorage
-            const agents = JSON.parse(localStorage.getItem('agents') || '[]');
-            agents.push(customAgent);
-            localStorage.setItem('agents', JSON.stringify(agents));
-
-            alert(`🎉 Custom AI Agent "${agentName}" built successfully!\n\nBase: ${baseAgent}\nSpecializations: ${specializations.join(', ')}\nIntelligence Level: ${intelligenceLevel}/10\n\nYour custom agent is now ready to use!`);
-            
-            closeBuildModal();
-        }
-
-        function downloadAPK() {
-            // Create comprehensive APK package
-            const apkPackage = {
-                name: "AI Agent Hub - Unified Platform",
-                version: "2.0.0",
-                package: "com.aiagenthub.unified",
-                description: "Complete AI Agent Platform with 20+ agents and unified intelligence",
-                features: [
-                    "20+ World-Class AI Agents",
-                    "Unified AI Combinations",
-                    "Custom AI Builder",
-                    "Interactive Demo Mode",
-                    "Advanced Customization",
-                    "Performance Analytics",
-                    "APK Export Function",
-                    "Real-time Deployment",
-                    "Community Features",
-                    "Cross-Platform Support"
-                ],
-                agents: topAgents,
-                unifiedAI: unifiedAI,
-                platform: {
-                    type: "Web App",
-                    framework: "HTML5/CSS3/JavaScript",
-                    responsive: true,
-                    offline: false,
-                    pwa: true
-                },
-                build: {
-                    date: new Date().toISOString(),
-                    builder: "AI Agent Hub Platform",
-                    version: "2.0.0"
-                }
-            };
-
-            const dataStr = JSON.stringify(apkPackage, null, 2);
-            const dataUri = 'data:application/json;charset=utf-8,'+ encodeURIComponent(dataStr);
-            
-            const exportFileDefaultName = `AI_Agent_Hub_Unified_v2.0.0.json`;
-            
-            const linkElement = document.createElement('a');
-            linkElement.setAttribute('href', dataUri);
-            linkElement.setAttribute('download', exportFileDefaultName);
-            linkElement.click();
-            
-            alert('🎉 AI Agent Hub APK Package downloaded successfully!\n\nThis package includes:\n• Complete platform with all 20 AI agents\n• Unified AI combination system\n• Custom AI builder\n• Interactive demo modes\n• Advanced customization tools\n• Performance analytics\n• Community features\n\nThe APK can be converted to Android app using PhoneGap/Cordova!');
-        }
-
-        function showAgentDetails(agentId) {
-            const agent = topAgents.find(a => a.id === agentId);
-            if (!agent) return;
-
-            alert(`${agent.name}\n\n${agent.description}\n\nSpecialty: ${agent.specialty}\nRating: ${agent.rating}/5.0\n\nCapabilities:\n${agent.capabilities.join('\n')}`);
-        }
-
-        function demoAgent(agentId) {
-            const agent = topAgents.find(a => a.id === agentId);
-            if (!agent) return;
-
-            alert(`🎭 Demo Mode: ${agent.name}\n\n${agent.description}\n\nThis would open an interactive demo where you can chat with ${agent.name} and experience its capabilities firsthand.\n\nFeatures:\n• Real-time conversation\n• Task demonstration\n• Capability showcase\n• Performance metrics`);
-        }
-
-        function addToUnified(agentId) {
-            if (!selectedAgents.includes(agentId)) {
-                toggleAgentSelection(agentId);
-            }
-            
-            // Scroll to unified builder
-            document.getElementById('unified').scrollIntoView({ behavior: 'smooth' });
-        }
-
-        function setupEventListeners() {
-            // Handle Enter key in demo input
-            document.getElementById('userInput').addEventListener('keypress', function(e) {
-                if (e.key === 'Enter') {
-                    sendUnifiedMessage();
-                }
-            });
-        }
-    </script>
+/* Init */
+document.addEventListener('DOMContentLoaded', ()=>{ loadConfig(); el('settingsModal').classList.add('hidden'); el('closeSettings').addEventListener('click', ()=> el('settingsModal').classList.add('hidden')); });
+</script>
 </body>
 </html>
